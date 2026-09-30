@@ -1,0 +1,12 @@
+.git
+.github
+.idea
+.vscode
+**/.dart_tool/
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/android/.gradle/
+**/android/local.properties
+*.log
+**/pubspec.lock
