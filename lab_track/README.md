@@ -1,6 +1,10 @@
-# lab_track
+# LabTrack - Diagnostic Lab Management
 
-A new Flutter project.
+A Flutter application for diagnostic lab sample tracking and management.
+
+## Problem Statement
+
+A network of diagnostic labs collects patient samples at home and processes them across multiple branches, but phlebotomists and lab technicians share no digital status tracking. Samples are misattributed or delayed in transit, and front-desk staff cannot locate reports without manually tracing physical slips.
 
 ## Getting Started
 
