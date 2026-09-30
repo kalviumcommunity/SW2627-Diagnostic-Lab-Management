@@ -25,23 +25,6 @@ class DefaultFirebaseOptions {
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
-      case TargetPlatform.iOS:
-        return ios;
-      case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
-      case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
-      case TargetPlatform.linux:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
       default:
         throw UnsupportedError(
           'DefaultFirebaseOptions are not supported for this platform.',
@@ -55,14 +38,5 @@ class DefaultFirebaseOptions {
     messagingSenderId: '939933930947',
     projectId: 'lab-track-f8a33',
     storageBucket: 'lab-track-f8a33.firebasestorage.app',
-  );
-
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAvQk4F8A-kMvMYr1ikbzRcgO2ERA8VfU4',
-    appId: '1:939933930947:ios:d80f5a6da8cf454ff85976',
-    messagingSenderId: '939933930947',
-    projectId: 'lab-track-f8a33',
-    storageBucket: 'lab-track-f8a33.firebasestorage.app',
-    iosBundleId: 'com.labtrack.labTrack',
   );
 }
