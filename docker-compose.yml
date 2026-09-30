@@ -1,0 +1,16 @@
+services:
+  lab-track-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lab_track_android
+    volumes:
+      # Mount application code for synchronization
+      - ./lab_track:/app/lab_track
+      # Prevent host OS build artifacts from conflicting with container binaries
+      - /app/lab_track/.dart_tool
+      - /app/lab_track/build
+      - /app/lab_track/android/.gradle
+    working_dir: /app/lab_track
+    # Run test suite and build debug APK on startup
+    command: sh -c "flutter pub get && flutter test && flutter build apk --debug"
