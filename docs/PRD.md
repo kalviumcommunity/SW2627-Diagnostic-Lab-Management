@@ -1,301 +1,283 @@
 # Product Requirements Document (PRD)
-# Smart Appliance Repair Dispatch & Diagnostics
+# SW2627: Diagnostic Lab Management (LabTrack)
 
-## 1. Product Overview
+## 1. Document Control & Metadata
 
-**Product name:** RepairTrack
-
-RepairTrack is a technician-dispatch and repair-diagnostics platform for a regional appliance repair service.
-
-The system gives the back office a live operational view of:
-- technician locations,
-- technician workload and availability,
-- appliance expertise,
-- assigned jobs and arrival windows,
-- previous repair history and repeated faults,
-- first-time-fix performance.
-
-The goal is to replace manual/intuition-based dispatching with data-driven assignment and give technicians the information needed to fix an appliance correctly on the first visit.
-
-## 2. Problem Statement
-
-A regional appliance repair service dispatches technicians across a city, but the back office assigns jobs without visibility into technician locations, current workloads, or appliance expertise. Customers receive arrival windows that are regularly missed, repeat visits for the same fault are not flagged, and the business has no data to improve first-time fix rates.
-
-## 3. Goals
-
-### Primary Goals
-
-1. Match each repair job with an appropriate technician using location, availability, workload, and appliance expertise.
-2. Provide live technician/job status to the dispatcher.
-3. Track customer arrival windows and identify delays.
-4. Detect previous/repeated faults before a technician visits.
-5. Capture diagnosis, repair action, parts used, and visit outcome.
-6. Measure first-time-fix rate and other operational KPIs.
-
-### Success Metrics
-
-| Metric | Target |
+| Field | Value |
 |---|---|
-| First-time-fix rate | Increase over baseline |
-| Missed arrival windows | Reduce significantly |
-| Dispatcher assignment time | Reduce |
-| Repeat-fault detection | 100% of known matching history surfaced |
-| Technician location freshness | Near real-time during active jobs |
-| Job status visibility | All active jobs have current status |
+| **Product Name** | LabTrack (Diagnostic Lab Management System) |
+| **Project Code** | SW2627 |
+| **Document Version** | 2.0.0 |
+| **Status** | Approved / Baseline |
+| **Target Platforms** | Mobile (Android/iOS for Phlebotomists & Patients), Web/Desktop (Front Desk, Lab Techs, Administrators) |
+| **Tech Stack** | Flutter (Dart), Firebase Auth, Cloud Firestore, Firebase Storage |
+
+---
+
+## 2. Executive Summary & Problem Statement
+
+### 2.1 The Problem
+Diagnostic healthcare providers operating across multi-branch networks face severe operational inefficiencies in sample tracking and diagnostic reporting:
+1. **Disconnected Phlebotomist & Lab Operations**: Home collection executives (phlebotomists) and central laboratory technicians share no unified digital tracking mechanism. Once a sample is drawn at a patient's home, its status remains invisible until physical receipt at a lab.
+2. **Chain-of-Custody & Cold-Chain Vulnerabilities**: Diagnostic samples (blood, serum, plasma, urine) require strict temperature control and time-sensitive processing. Without digital milestone tracking, transit delays, sample hemolysis, and temperature excursions go undetected until test rejection.
+3. **Front-Desk Slip Bottleneck**: Front-desk receptionists cannot track the live status of pending lab tests without manually sifting through physical paper slips or placing repeated phone calls to processing benches, resulting in long patient queues and lost reports.
+4. **Sample Misattribution & Loss**: Physical handwritten vial labels lead to specimen mix-ups, transcription errors, and missing accession numbers during multi-branch transit.
+
+### 2.2 The Solution: LabTrack
+**LabTrack** is an enterprise-grade diagnostic laboratory management and sample lifecycle tracking platform. It replaces manual paper slips with barcode-driven chain-of-custody tracking, enables real-time handoff verification between home collection phlebotomists and central labs, and provides front-desk executives and patients with instant digital report retrieval.
+
+---
+
+## 3. Goals & Success Metrics
+
+### 3.1 Primary Goals
+1. **End-to-End Sample Traceability**: Provide real-time visibility into every sample vial from collection, multi-branch transit, central accessioning, testing, to pathologist report sign-off.
+2. **Zero-Paper Front-Desk Operations**: Allow front-desk staff to look up any patient, order, sample, or test report instantly by barcode, phone number, or order ID.
+3. **Immutable Chain of Custody**: Log every custodian handoff with actor ID, role, GPS location, timestamp, and vial temperature status.
+4. **Turnaround Time (TAT) Optimization**: Minimize turnaround delays between collection and report delivery through milestone tracking and automated status transitions.
+5. **Sample Integrity & Rejection Prevention**: Track cold-chain compliance and flag delayed samples before specimen degradation occurs.
+
+### 3.2 Success Metrics & Target KPIs
+
+| Metric | Baseline (Manual Operations) | Target (LabTrack Implementation) |
+|---|---|---|
+| **Front-Desk Report Lookup Time** | 4 – 8 minutes (manual slip searching) | **< 5 seconds** (instant digital search) |
+| **Specimen Misattribution Rate** | ~1.5% of total intake | **0.0%** (enforced barcode scanning) |
+| **Sample Rejection / Recollection Rate** | 3.8% (delay/temperature failure) | **< 0.8%** (real-time transit monitoring) |
+| **Average Test Turnaround Time (TAT)** | 14 – 22 hours | **< 8 hours** (for routine blood tests) |
+| **Chain-of-Custody Audit Coverage** | 0% digital trail | **100%** tamper-evident event logging |
+| **Patient Digital Report Adoption** | < 25% | **> 85%** direct in-app view and PDF download |
+
+---
 
 ## 4. Users and Roles
 
-### Dispatcher / Back Office
+The system enforces strict Role-Based Access Control (`UserRole`) with 5 dedicated user personas:
 
-- View all open jobs.
-- View technician locations, workload, availability, and expertise.
-- Create/reassign jobs.
-- Accept or override recommended technician assignments.
-- Monitor arrival-window risk.
-- View repeat-fault alerts.
+```text
+               ┌────────────────────────────────────────────────────────┐
+               │                     User Personas                      │
+               └───────┬──────────┬──────────┬──────────┬──────────┬────┘
+                       │          │          │          │          │
+                       ▼          ▼          ▼          ▼          ▼
+                  [Patient] [Phlebotomist]  [Lab Tech]  [FrontDesk]  [Admin]
+```
 
-### Technician
+### 4.1 Patient
+- Books home collection slots for diagnostic tests (e.g., CBC, Lipid Profile, HbA1c, Thyroid Panel).
+- Tracks phlebotomist dispatch and sample processing progress in real time via visual timeline.
+- Views parameter-level results and downloads verified PDF lab reports.
 
-- View assigned jobs.
-- Share current location while on duty/active job.
-- See appliance details and previous repair history.
-- Update status:
-  - Accepted
-  - En route
-  - Arrived
-  - Diagnosing
-  - Repairing
-  - Completed
-- Record diagnosis, parts, work performed, and outcome.
+### 4.2 Phlebotomist (Home Collection Executive)
+- Views daily assigned home collection appointments with addresses, phone numbers, and test requirements.
+- Scans and registers physical vial barcodes (EDTA purple top, SST yellow top, etc.) at the patient's doorstep.
+- Captures collection timestamp, sample temperature condition, and collection notes.
+- Hand-overs collected batches to branch hubs and logs transit milestones.
 
-### Customer
+### 4.3 Laboratory Technician & Pathologist
+- **Lab Technician**:
+  - Scans and accessions incoming sample racks from branch hubs or phlebotomists.
+  - Inspects vial integrity (flags hemolyzed/clotted specimens for rejection/recollection).
+  - Enters quantitative and qualitative test parameter findings (e.g., Hemoglobin, WBC count, Total Cholesterol).
+- **Pathologist**:
+  - Reviews entered parameters against biological reference intervals.
+  - Adds clinical interpretations/flags abnormal values and electronically signs/authorizes the final report.
 
-- Create/request a repair.
-- See appointment/arrival window and status.
-- Receive notifications about assignment, technician arrival, delay, and completion.
-- View service history.
+### 4.4 Front-Desk Receptionist
+- Instantly searches patient orders and test reports using Patient Phone Number, Order ID, or Sample Barcode.
+- Replaces physical paper slips with digital status tracking and on-demand report printing.
+- Resolves patient walk-in inquiries regarding sample testing progress.
 
-### Manager / Admin
+### 4.5 Lab Administrator & Operations Manager
+- Manages multi-branch networks (Branch Hubs, Collection Centers, Central Reference Labs).
+- Oversees phlebotomist and lab technician staffing and workload allocation.
+- Monitors operations through the SLA Dashboard (TAT trends, branch throughput, sample rejection ratios).
 
-- Manage technicians, appliance expertise, service areas, and users.
-- View analytics such as:
-  - First-time-fix rate
-  - Repeat visits
-  - Arrival-window performance
-  - Technician utilization
-  - Common faults
-  - Jobs by appliance type
+---
 
 ## 5. Functional Requirements
 
-### FR-01: Authentication and Authorization
+### FR-01: Authentication & Role-Based Access Control (RBAC)
+- The system shall authenticate users via Firebase Authentication (Phone OTP for Patients/Phlebotomists and Email/Password credentials for Lab Staff & Administrators).
+- The system shall inspect the user's role (`UserRole`) upon sign-in and route the user to their designated role portal (`/patient`, `/phlebotomist`, `/lab`, `/frontdesk`, or `/admin`).
+- Unauthenticated or unauthorized role transitions shall be intercepted and rejected.
 
-The system shall authenticate users and restrict features by role.
+### FR-02: Patient Test Catalog & Home Booking
+- The system shall present an interactive catalog of diagnostic tests with test pricing, sample container type (e.g., EDTA, SST), fasting requirements, and description.
+- The patient shall be able to select multiple tests, choose an address, schedule a collection date and time slot, and confirm the booking order.
+- The system shall generate a unique `OrderId` and associate it with the selected branch.
 
-### FR-02: Customer Job Creation
+### FR-03: Phlebotomist Assignment & Dispatch Workflow
+- The system shall assign booked collection orders to phlebotomists based on geographic service zone, branch affiliation, and schedule availability.
+- The phlebotomist mobile interface shall display an organized queue of pending pickups, completed pickups, and patient route details.
 
-A customer or dispatcher shall be able to create a repair job containing:
+### FR-04: Barcode Vial Tagging & Doorstep Accessioning
+- During sample drawing at the patient's location, the phlebotomist shall scan or enter unique vial barcodes (`barcode`).
+- The system shall validate that the barcode format complies with laboratory standards and link the vial to the corresponding `OrderId` and `PatientId`.
+- The system shall record vial type (e.g., `Standard EDTA`, `Serum SST`, `Sodium Citrate`) and collection timestamp.
 
-- Customer
-- Appliance type
-- Brand
-- Model
-- Reported fault
-- Address/location
-- Preferred appointment
-- Arrival window
+### FR-05: Immutable Chain-of-Custody Audit Trail
+- Every state change or custodian transfer must generate an append-only `SampleEventModel` milestone record containing:
+  - Unique Event ID (`id`)
+  - Sample Barcode (`sampleBarcode`)
+  - Target Status (`status`)
+  - Timestamp (`timestamp`)
+  - Actor ID, Name, and Role (`actorId`, `actorName`, `actorRole`)
+  - Location Name (`locationName`)
+  - Geographic Coordinates (`latitude`, `longitude`)
+  - Specimen Temperature (`temperatureCelsius`)
+  - Contextual Notes (`notes`)
+- Event histories shall be immutable to ensure forensic compliance and prevent data tampering.
 
-### FR-03: Technician Profile
+### FR-06: Multi-Branch Sample Routing & Transit Tracking
+- The system shall support sample routing across a distributed hub-and-spoke laboratory network:
+  1. Patient Home ➔ Branch Collection Hub
+  2. Branch Collection Hub ➔ Central Reference Laboratory
+- Couriers or phlebotomists shall check out samples into `inTransit` or `inTransitToCentralLab`.
+- Receiving hubs shall batch-scan incoming vials into `receivedAtBranch` or `receivedAtLab`.
 
-Each technician shall have:
+### FR-07: Lab Accessioning, Rack Management & QC
+- Lab technicians shall scan incoming sample vials at the central laboratory to transition them to `receivedAtLab` and assign them to test benches/racks.
+- Technicians shall inspect sample quality; if a sample is hemolyzed, clotted, or insufficient in volume, the technician shall transition it to `rejected` with mandatory rejection reasons, automatically notifying the patient and front desk for recollection scheduling.
 
-- Name/contact
-- Current availability
-- Current location
-- Service area
-- Appliance expertise
-- Workload/active-job count
-- Performance metrics
+### FR-08: Diagnostic Result Entry & Pathologist Verification
+- Lab technicians shall enter specific analytical values for test parameters (e.g., `ReportParameter`: name, numeric value, unit, reference range, abnormal flag).
+- The system shall automatically compute whether values fall into `Normal`, `High`, `Low`, or `Critical` categories.
+- Pathologists shall review entered parameters, apply clinical interpretations, and digitally sign the report, transitioning status to `reportReady`.
+- The system shall generate a standardized, print-ready PDF diagnostic report with watermarks, branch letterhead, and pathologist credentials.
 
-### FR-04: Smart Assignment
+### FR-09: Front-Desk Instant Search & Paperless Inquiries
+- Front-desk staff shall have a high-speed search bar allowing lookup by:
+  - Patient Mobile Number
+  - Order ID
+  - Sample Vial Barcode
+  - Patient Full Name
+- The search view shall return real-time status (`booked`, `collected`, `inTransit`, `processing`, `reportReady`), sample milestone timeline, and a one-click button to view or print the verified PDF report.
+- The front-desk system shall eliminate the need for physical paper search slips.
 
-The system shall recommend technicians using:
+### FR-10: Patient Real-Time Tracker & Report Download
+- Patients shall have access to an intuitive visual progress bar displaying the exact stage of their sample (percentage completion from 10% to 100%).
+- Upon report authorization, patients shall receive immediate in-app viewing access and one-click PDF report download capability.
 
-1. Required appliance expertise
-2. Technician availability
-3. Distance/travel estimate
-4. Current workload
-5. Service-area compatibility
-6. Appointment/arrival-window constraints
+### FR-11: Automated Notifications & Alerts
+- The system shall issue real-time notification events when:
+  - Phlebotomist is assigned and arrives.
+  - Sample is received at the central laboratory.
+  - Sample is flagged as rejected (recollection alert).
+  - Diagnostic report is verified and ready for download.
 
-The dispatcher shall be able to accept or override the recommendation.
+### FR-12: Operational SLA Dashboard & Branch Analytics
+- Administrators shall have access to real-time analytics displaying:
+  - Average Turnaround Time (TAT) per test and per branch.
+  - Sample collection volume per phlebotomist.
+  - Sample rejection rate and root-cause breakdown.
+  - Active sample inventory by branch status.
 
-### FR-05: Live Job Tracking
+---
 
-The system shall track job states:
+## 6. Sample Lifecycle State Machine
 
-`NEW -> ASSIGNED -> ACCEPTED -> EN_ROUTE -> ARRIVED -> DIAGNOSING -> REPAIRING -> COMPLETED`
+The platform strictly manages sample progression through eleven deterministic states:
 
-Alternative terminal states:
+```text
+ [booked]
+    │
+    ▼
+ [phlebotomistAssigned]
+    │
+    ▼
+ [collected] ──(Temperature Excursion / Hemolysis)──► [rejected]
+    │
+    ▼
+ [inTransit]
+    │
+    ▼
+ [receivedAtBranch]
+    │
+    ▼
+ [inTransitToCentralLab]
+    │
+    ▼
+ [receivedAtLab] ──────(Specimen Clotted / Insufficient)──► [rejected]
+    │
+    ▼
+ [processing]
+    │
+    ▼
+ [reportReady]
+    │
+    ▼
+ [delivered]
+```
 
-- `CANCELLED`
-- `NO_ACCESS`
-- `FOLLOW_UP_REQUIRED`
+---
 
-### FR-06: Arrival-Window Monitoring
+## 7. Non-Functional Requirements (NFRs)
 
-The system shall compare the expected arrival window with technician status/location and flag jobs at risk of being late.
-
-### FR-07: Repeat-Fault Detection
-
-Before assignment and before diagnosis, the system shall search the customer's/appliance's service history for:
-
-- Previous jobs for the same appliance
-- Similar fault descriptions
-- Recent repeat visits
-- Unresolved/follow-up jobs
-
-A repeat-fault alert shall be shown to the dispatcher and technician.
-
-### FR-08: Diagnosis and Repair Record
-
-A technician shall record:
-
-- Diagnosis
-- Fault category
-- Root cause
-- Repair performed
-- Parts used
-- Notes
-- Completion status
-- Whether the issue was fixed on the first visit
-
-### FR-09: Notifications
-
-The system shall notify relevant users when:
-
-- A job is assigned
-- Technician accepts
-- Technician is en route
-- Technician arrives
-- Arrival is delayed
-- Job is completed
-- Follow-up is required
-
-### FR-10: Analytics
-
-Managers shall be able to view:
-
-- First-time-fix rate
-- Repeat-visit rate
-- Missed/late arrival windows
-- Average travel time
-- Average repair duration
-- Technician utilization
-- Common fault categories
-- Jobs by appliance type
-
-## 6. Non-Functional Requirements
-
-| Requirement | Description |
+| Category | Requirement Specification |
 |---|---|
-| Performance | Active job/dispatch screens should load quickly and updates should appear near real time. |
-| Availability | Core dispatch and job tracking should remain available during business hours. |
-| Security | Role-based access, authenticated users, protected customer information. |
-| Scalability | Data model should support additional technicians, branches/service zones, and job volume. |
-| Reliability | Job state changes must be persisted and auditable. |
-| Usability | Dispatcher should understand technician workload and job risk from one dashboard. |
-| Privacy | Location tracking should be limited to operational need and appropriate user consent/policy. |
+| **Performance** | Front-desk search queries must return results in **< 500ms**. Mobile UI must maintain **60 FPS** during list scrolling and barcode camera scanning. |
+| **Scalability** | Cloud Firestore architecture must handle **100,000+ daily sample milestones** across 50+ branches without contention or throughput degradation. |
+| **Availability & Resilience** | Core services must maintain **99.9% uptime**. Phlebotomist mobile app must support offline data entry (caching collected sample barcodes and syncing when connectivity resumes). |
+| **Security & Privacy** | Compliance with healthcare data privacy principles (DISHA / HIPAA). All communications encrypted via TLS 1.3. Firestore documents protected by granular role-based security rules. |
+| **Data Integrity** | Event history (`sample_events`) is append-only. Sample status can only move forward according to the deterministic state machine. |
+| **Usability** | Single-handed barcode scanning workflow for field phlebotomists. High-contrast clinical alerts for abnormal test values (`High` in crimson, `Low` in amber). |
 
-## 7. MVP Scope
+---
 
-### In Scope
+## 8. MVP Scope vs. Future Phases
 
-- Login and role-based access
-- Customer/job creation
-- Technician profiles and expertise
-- Technician availability/location
-- Dispatcher dashboard
-- Smart technician recommendation
-- Job status tracking
-- Repeat-fault alert
-- Diagnosis/repair record
-- Basic notifications
-- First-time-fix and operational dashboard
+### 8.1 In-Scope for MVP (Phase 1)
+- Multi-role authentication (Patient, Phlebotomist, Lab Tech, Front Desk, Admin).
+- Diagnostic test catalog and patient home collection appointment booking.
+- Phlebotomist mobile queue with vial barcode registration.
+- Chain-of-custody milestone logging (timestamp, user, location, temperature).
+- Multi-branch transit status tracking (Home ➔ Branch ➔ Central Lab).
+- Lab result entry with normal/abnormal parameter auto-flagging.
+- Pathologist report verification and digital report viewer.
+- Front-desk instant search by barcode, phone, and order ID.
+- Operational SLA & sample volume dashboard.
 
-### Out of Scope for MVP
+### 8.2 Out of Scope for MVP (Phase 2 & 3)
+- Automated AI-driven optical phlebotomy vein finder integration.
+- Direct bidirectional HL7/ASTM interfacing with automated clinical chemistry analyzers (e.g., Roche Cobas, Sysmex).
+- Third-party courier fleet algorithmic routing and GPS geofencing.
+- Payment gateway integrations for instant online UPI/card settlements.
 
-- Automated route optimization across dozens of jobs
-- Payment processing
-- Spare-parts purchasing
-- AI diagnosis
-- Predictive failure forecasting
-- Full customer billing/accounting
+---
 
-## 8. Core User Stories
+## 9. Core User Stories & Acceptance Criteria
 
-### US-01 — Dispatcher Assignment
+### US-01: Doorstep Sample Barcode Tagging (Phlebotomist)
+> **As a** field phlebotomist,  
+> **I want to** scan the barcode on blood collection vials at the patient's doorstep,  
+> **So that** the sample is digitally linked to the order with zero handwriting errors.
+- **Acceptance Criteria**:
+  - Scanning a barcode associates it with the active order in Firestore.
+  - The sample state transitions from `phlebotomistAssigned` to `collected`.
+  - A `SampleEventModel` milestone is generated with GPS, timestamp, and temperature reading.
 
-> As a dispatcher, I want to see nearby available technicians with matching appliance expertise so that I can assign the best technician instead of guessing.
+### US-02: Instant Report & Status Lookup (Front Desk)
+> **As a** front-desk receptionist,  
+> **I want to** search for a patient by phone number or sample barcode in less than two seconds,  
+> **So that** I can inform walk-in patients of their exact test status without searching for physical paper slips.
+- **Acceptance Criteria**:
+  - Search query matches substrings across phone numbers, patient names, and barcode IDs.
+  - Result view displays real-time status and sample stage timeline.
+  - If status is `reportReady`, a one-click button opens the complete PDF report.
 
-### US-02 — Technician Context
+### US-03: Diagnostic Parameter Entry & Abnormal Highlighting (Lab Tech)
+> **As a** lab technician,  
+> **I want to** record observed parameter values for ordered tests,  
+> **So that** out-of-range parameters are visually highlighted for pathologist review.
+- **Acceptance Criteria**:
+  - Values entered outside the normal biological reference range automatically receive a `High` or `Low` flag.
+  - The technician can submit the report draft for pathologist sign-off.
 
-> As a technician, I want to see the appliance's previous faults and repairs before visiting so that I can prepare and avoid an unnecessary repeat visit.
-
-### US-03 — Customer Visibility
-
-> As a customer, I want to know whether my technician is on the way and whether the arrival window is at risk so that I am not waiting without information.
-
-### US-04 — Manager Analytics
-
-> As a manager, I want first-time-fix and repeat-visit metrics so that I can identify training, staffing, and process problems.
-
-## 9. Acceptance Criteria
-
-### Smart Assignment
-
-- A job cannot be recommended to an unavailable technician.
-- Matching appliance expertise increases recommendation priority.
-- Distance and workload influence the recommendation.
-- Dispatcher can manually override the recommendation.
-
-### Repeat Fault
-
-- A matching recent service history is visible before the visit.
-- Technician can view the previous diagnosis and repair.
-- A follow-up job can be linked to the original job.
-
-### First-Time Fix
-
-- A completed job records whether the appliance was fixed during that visit.
-- Follow-up/repeat visits are linked to the previous job.
-- Dashboard calculates first-time-fix rate from completed jobs.
-
-## 10. KPIs
-
-### First-Time-Fix Rate
-
-`FTF % = jobs fixed on first visit / completed repair jobs × 100`
-
-### Repeat Visit Rate
-
-`Repeat Visit % = repeat/follow-up visits / completed repair jobs × 100`
-
-### On-Time Arrival Rate
-
-`On-Time % = jobs arriving within promised window / completed visits × 100`
-
-### Technician Utilization
-
-`Utilization % = active/assigned working time / available working time × 100`
-
-## 11. Risks and Mitigations
-
-| Risk | Mitigation |
-|---|---|
-| GPS unavailable | Use last known location and clearly show stale location time. |
-| Poor location accuracy | Use location timestamp/accuracy and avoid pretending GPS is exact. |
-| Wrong expertise data | Admin can maintain technician skill profiles. |
-| Too many recommendations | Rank candidates and explain the main ranking factors. |
-| Repeat fault not described similarly | Combine appliance identity, fault category, and recent history; allow manual linking. |
-| Network interruption | Cache safe local UI state and retry writes where appropriate. |
+### US-04: Digital Report Access (Patient)
+> **As a** patient,  
+> **I want to** view my test progress and download my verified diagnostic report on my mobile device,  
+> **So that** I do not have to travel to the lab branch to collect physical paper reports.
+- **Acceptance Criteria**:
+  - Patient sees dynamic progress bar matching `SampleStatus.progressPercentage`.
+  - Report download is unlocked immediately upon `reportReady` status.

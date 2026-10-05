@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Flutter: Run App",
+      "type": "shell",
+      "command": "flutter run",
+      "options": {
+        "cwd": "${workspaceFolder}/lab_track"
+      },
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter: Run on Chrome",
+      "type": "shell",
+      "command": "flutter run -d chrome",
+      "options": {
+        "cwd": "${workspaceFolder}/lab_track"
+      },
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter: Run Tests",
+      "type": "shell",
+      "command": "flutter test",
+      "options": {
+        "cwd": "${workspaceFolder}/lab_track"
+      },
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Docker: Build & Run APK Container",
+      "type": "shell",
+      "command": "docker compose up --build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
