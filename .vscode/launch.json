@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "LabTrack (Flutter Debug)",
+      "cwd": "${workspaceFolder}/lab_track",
+      "request": "launch",
+      "type": "dart",
+      "program": "${workspaceFolder}/lab_track/lib/main.dart"
+    },
+    {
+      "name": "LabTrack (Chrome Web)",
+      "cwd": "${workspaceFolder}/lab_track",
+      "request": "launch",
+      "type": "dart",
+      "program": "${workspaceFolder}/lab_track/lib/main.dart",
+      "args": ["-d", "chrome"]
+    },
+    {
+      "name": "LabTrack (Android Device/Emulator)",
+      "cwd": "${workspaceFolder}/lab_track",
+      "request": "launch",
+      "type": "dart",
+      "program": "${workspaceFolder}/lab_track/lib/main.dart",
+      "args": ["-d", "android"]
+    }
+  ]
+}
