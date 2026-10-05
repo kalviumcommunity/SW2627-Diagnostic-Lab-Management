@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../auth/screens/profile_setup_screen.dart';
 import 'book_collection_screen.dart';
 import 'track_sample_screen.dart';
 import 'my_reports_screen.dart';
@@ -63,6 +66,11 @@ class _PatientDashboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    final user = authProvider.currentUser;
+    final patientName = user?.name ?? 'John Doe';
+    final patientId = user?.id ?? 'PT-84210';
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -75,18 +83,18 @@ class _PatientDashboardTab extends StatelessWidget {
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  'Welcome, John Doe',
-                  style: TextStyle(
+                  'Welcome, $patientName',
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
                 Text(
-                  'Patient ID: #PT-84210',
-                  style: TextStyle(
+                  'Patient ID: #$patientId',
+                  style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                   ),
@@ -120,7 +128,42 @@ class _PatientDashboardTab extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (val) async {
+              if (val == 'profile') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
+                );
+              } else if (val == 'logout') {
+                await context.read<AuthProvider>().logout();
+              }
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 'profile',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_outlined, size: 18),
+                    SizedBox(width: 8),
+                    Text('Edit Medical Profile'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout_rounded, size: 18, color: AppColors.error),
+                    SizedBox(width: 8),
+                    Text('Log Out', style: TextStyle(color: AppColors.error)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 6),
         ],
       ),
       body: SingleChildScrollView(

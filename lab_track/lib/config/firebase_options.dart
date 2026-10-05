@@ -17,18 +17,19 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
+      return const FirebaseOptions(
+        apiKey: 'AIzaSyCSDu_444uJqEnmD1y-4p3lt5jXyPrPJT8',
+        appId: '1:939933930947:web:751beb3e09287efdf85976',
+        messagingSenderId: '939933930947',
+        projectId: 'lab-track-f8a33',
+        storageBucket: 'lab-track-f8a33.firebasestorage.app',
       );
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
       default:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions are not supported for this platform.',
-        );
+        return android;
     }
   }
 

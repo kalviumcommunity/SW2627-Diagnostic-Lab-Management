@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class BookCollectionScreen extends StatefulWidget {
   const BookCollectionScreen({super.key});
@@ -11,10 +13,21 @@ class BookCollectionScreen extends StatefulWidget {
 class _BookCollectionScreenState extends State<BookCollectionScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _nameController = TextEditingController(text: 'John Doe');
-  final TextEditingController _phoneController = TextEditingController(text: '+91 98765 43210');
-  final TextEditingController _addressController = TextEditingController(text: 'Apartment 4B, Sunrise Residency, Sector 14');
+  late final TextEditingController _nameController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _addressController;
   final TextEditingController _notesController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final user = context.read<AuthProvider>().currentUser;
+    _nameController = TextEditingController(text: user?.name ?? 'John Doe');
+    _phoneController = TextEditingController(text: user?.phoneNumber ?? '+91 98765 43210');
+    _addressController = TextEditingController(
+      text: user?.address ?? 'Apartment 4B, Sunrise Residency, Sector 14',
+    );
+  }
 
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   String _selectedSlot = '07:00 AM - 08:30 AM (Fasting)';
