@@ -68,6 +68,24 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: Navigator.canPop(context)
+          ? AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text(
+                'Phone OTP Authentication',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
+          : null,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

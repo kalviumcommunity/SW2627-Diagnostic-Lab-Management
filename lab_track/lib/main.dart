@@ -5,9 +5,9 @@ import 'package:provider/provider.dart';
 import 'config/firebase_options.dart';
 import 'shared/theme/app_theme.dart';
 import 'auth/frontend/providers/auth_provider.dart';
-import 'auth/frontend/screens/login_screen.dart';
+import 'auth/frontend/screens/role_selection_screen.dart';
 import 'patient/frontend/providers/patient_provider.dart';
-import 'patient/frontend/screens/patient_home_screen.dart';
+import 'routing/role_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,8 +42,8 @@ class LabTrackApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: authProvider.isAuthenticated
-          ? const PatientHomeScreen()
-          : const LoginScreen(),
+          ? RoleRouter.getHomeScreenForRole(authProvider.currentUser?.role)
+          : const RoleSelectionScreen(),
     );
   }
 }
