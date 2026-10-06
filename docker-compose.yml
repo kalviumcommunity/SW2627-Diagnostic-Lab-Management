@@ -1,16 +1,20 @@
+# ==============================================================================
+# LabTrack - Diagnostic Lab Management System Docker Compose Configuration
+#
+# 🔗 Web Portal Link: http://localhost:8080
+# 🚀 Quick start:     docker compose up -d --build
+# 📜 View logs:       docker compose logs -f
+# 🛑 Stop:            docker compose down
+# ==============================================================================
+
 services:
-  lab-track-app:
+  lab-track-web:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: lab_track_android
-    volumes:
-      # Mount application code for synchronization
-      - ./lab_track:/app/lab_track
-      # Prevent host OS build artifacts from conflicting with container binaries
-      - /app/lab_track/.dart_tool
-      - /app/lab_track/build
-      - /app/lab_track/android/.gradle
-    working_dir: /app/lab_track
-    # Run test suite and build debug APK on startup
-    command: sh -c "flutter pub get && flutter test && flutter build apk --debug"
+    container_name: lab_track_web
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:${PORT:-8080}"
+    environment:
+      - PORT=${PORT:-8080}

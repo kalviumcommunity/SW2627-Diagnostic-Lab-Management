@@ -1,30 +1,54 @@
 # ==============================================================================
-# Dockerfile for LabTrack (Flutter Android App)
+# Multi-Stage Dockerfile for LabTrack (Flutter Web Application)
+# Produces an ultra-lightweight production image using Nginx Alpine
 # ==============================================================================
-FROM ghcr.io/cirruslabs/flutter:stable
 
-# Set container working directory
+# ------------------------------------------------------------------------------
+# Stage 1: Build Stage (Flutter SDK)
+# ------------------------------------------------------------------------------
+FROM ghcr.io/cirruslabs/flutter:stable AS builder
+
 WORKDIR /app
 
-# Ensure Android SDK licenses are accepted
-RUN yes | sdkmanager --licenses || true
+# Disable analytics for cleaner logs and faster builds
+RUN flutter config --no-analytics
 
-# Copy dependency definition file first for optimal Docker layer caching
-COPY lab_track/pubspec.yaml ./lab_track/
+# Copy dependency specifications first for Docker layer caching
+COPY lab_track/pubspec.yaml lab_track/pubspec.lock* ./lab_track/
 
-# Download and resolve dependencies
+# Resolve Flutter dependencies
 WORKDIR /app/lab_track
 RUN flutter pub get
 
-# Copy the complete application source code
+# Copy all application source files
 WORKDIR /app
 COPY lab_track/ ./lab_track/
 
-# Set the active working directory to the Flutter app
+# Build Flutter Web in release mode
 WORKDIR /app/lab_track
+RUN flutter build web --release
 
-# Run flutter doctor to verify Android toolchain
-RUN flutter doctor -v
+# ------------------------------------------------------------------------------
+# Stage 2: Runtime Stage (Lightweight Nginx Alpine)
+# Final image size: ~25MB (vs ~5GB+ for Flutter SDK/Android image)
+# ------------------------------------------------------------------------------
+FROM nginx:alpine
 
-# Default command: build the Android debug APK
-CMD ["flutter", "build", "apk", "--debug"]
+# Copy custom Nginx configuration for Flutter single-page application routing
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy entrypoint script to display the clickable localhost link in console
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN sed -i 's/\r$//' /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh
+
+# Copy compiled Flutter web assets from builder stage
+COPY --from=builder /app/lab_track/build/web /usr/share/nginx/html
+
+# Expose web server port
+EXPOSE 8080
+
+# Default port environment variable
+ENV PORT=8080
+
+# Run entrypoint script which logs the localhost link and starts Nginx
+ENTRYPOINT ["/docker-entrypoint.sh"]

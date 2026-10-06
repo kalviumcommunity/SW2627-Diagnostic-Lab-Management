@@ -9,4 +9,3 @@
 **/android/.gradle/
 **/android/local.properties
 *.log
-**/pubspec.lock
