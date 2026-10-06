@@ -16,3 +16,30 @@ A network of diagnostic labs collects patient samples at home and processes them
 ## Project Structure
 
 - [`lab_track/`](lab_track/): Flutter mobile/web application codebase.
+- [`Dockerfile`](Dockerfile): Multi-stage Dockerfile producing a lightweight `nginx:alpine` runtime image.
+- [`docker-compose.yml`](docker-compose.yml): Docker Compose configuration with port mapping for local browser view.
+- [`nginx.conf`](nginx.conf): Nginx configuration optimized for Flutter Web SPA routing and caching.
+- [`docker-entrypoint.sh`](docker-entrypoint.sh): Container entrypoint script displaying the direct localhost link upon startup.
+
+---
+
+## Quick Start with Docker
+
+### 1. Build and Run Container
+```bash
+docker compose up -d --build
+```
+
+### 2. View in Browser
+Open your browser and navigate to:
+👉 **[http://localhost:8080](http://localhost:8080)**
+
+### 3. View Logs (Displays Localhost Access Link)
+```bash
+docker compose logs -f
+```
+
+### 4. Stop the Container
+```bash
+docker compose down
+```
