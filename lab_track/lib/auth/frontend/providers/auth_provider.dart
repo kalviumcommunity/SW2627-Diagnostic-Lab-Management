@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../../domain/enums/user_role.dart';
 import '../../../data/models/user_model.dart';
 import '../../backend/repositories/auth_repository.dart';
 
@@ -26,13 +27,13 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> loginAsDemoPatient() async {
+  Future<bool> loginAsRole(UserRole role) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final user = await _authRepository.signInAsDemoPatient();
+      final user = await _authRepository.signInAsRole(role);
       _currentUser = user;
       _isLoading = false;
       notifyListeners();
@@ -43,6 +44,10 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  Future<bool> loginAsDemoPatient() async {
+    return loginAsRole(UserRole.patient);
   }
 
   Future<bool> sendOtp(String phoneNumber) async {

@@ -139,11 +139,21 @@ class _PatientDashboardTab extends StatelessWidget {
                   context,
                   MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
                 );
-              } else if (val == 'logout') {
+              } else if (val == 'logout' || val == 'switch_role') {
                 await context.read<AuthProvider>().logout();
               }
             },
             itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 'switch_role',
+                child: Row(
+                  children: [
+                    Icon(Icons.swap_horiz_rounded, size: 18, color: AppColors.primary),
+                    SizedBox(width: 8),
+                    Text('Switch Portal / Role'),
+                  ],
+                ),
+              ),
               PopupMenuItem(
                 value: 'profile',
                 child: Row(

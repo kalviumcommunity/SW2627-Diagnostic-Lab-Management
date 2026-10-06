@@ -31,10 +31,63 @@ class AuthRepository {
     createdAt: DateTime.now().subtract(const Duration(days: 30)),
   );
 
+  static final UserModel defaultDemoPhlebotomist = UserModel(
+    id: 'PH-204',
+    name: 'Rahul Verma',
+    phoneNumber: '+91 98765 11111',
+    email: 'rahul.phlebo@labtrack.com',
+    role: UserRole.phlebotomist,
+    address: 'Central Diagnostic Hub, Sector 18',
+    assignedBranchId: 'branch-delhi-central',
+    createdAt: DateTime.now().subtract(const Duration(days: 90)),
+  );
+
+  static final UserModel defaultDemoFrontDesk = UserModel(
+    id: 'FD-108',
+    name: 'Priya Sharma',
+    phoneNumber: '+91 98765 22222',
+    email: 'priya.frontdesk@labtrack.com',
+    role: UserRole.frontDesk,
+    address: 'Downtown Spoke Center, Reception Desk',
+    assignedBranchId: 'branch-spoke-01',
+    createdAt: DateTime.now().subtract(const Duration(days: 120)),
+  );
+
+  static final UserModel defaultDemoAdmin = UserModel(
+    id: 'ADM-001',
+    name: 'Dr. Vikram Malhotra',
+    phoneNumber: '+91 98765 33333',
+    email: 'dr.malhotra@labtrack.com',
+    role: UserRole.admin,
+    address: 'LabTrack Apex Operations HQ',
+    assignedBranchId: 'branch-apex-hq',
+    createdAt: DateTime.now().subtract(const Duration(days: 365)),
+  );
+
   Future<UserModel> signInAsDemoPatient() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    _cachedUser = defaultDemoPatient;
-    return defaultDemoPatient;
+    return signInAsRole(UserRole.patient);
+  }
+
+  Future<UserModel> signInAsRole(UserRole role) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final UserModel user;
+    switch (role) {
+      case UserRole.phlebotomist:
+        user = defaultDemoPhlebotomist;
+        break;
+      case UserRole.frontDesk:
+        user = defaultDemoFrontDesk;
+        break;
+      case UserRole.admin:
+        user = defaultDemoAdmin;
+        break;
+      case UserRole.patient:
+      default:
+        user = defaultDemoPatient;
+        break;
+    }
+    _cachedUser = user;
+    return user;
   }
 
   Future<void> sendOtp({
