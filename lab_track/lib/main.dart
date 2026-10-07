@@ -7,6 +7,7 @@ import 'shared/theme/app_theme.dart';
 import 'auth/frontend/providers/auth_provider.dart';
 import 'auth/frontend/screens/role_selection_screen.dart';
 import 'patient/frontend/providers/patient_provider.dart';
+import 'phlebotomist/frontend/providers/phlebotomist_provider.dart';
 import 'routing/role_router.dart';
 
 void main() async {
@@ -24,6 +25,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => PatientProvider()),
+        ChangeNotifierProvider(create: (_) => PhlebotomistProvider()),
       ],
       child: const LabTrackApp(),
     ),
