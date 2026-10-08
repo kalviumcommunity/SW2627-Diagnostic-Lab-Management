@@ -24,6 +24,8 @@ class PatientProvider extends ChangeNotifier {
 
   PatientProvider({PatientRepository? repository})
       : _repository = repository ?? PatientRepository() {
+    _activeSample = _repository.getInitialSample('PT-84210');
+    _reports = _repository.getInitialReports('PT-84210');
     refreshPatientData('PT-84210');
   }
 

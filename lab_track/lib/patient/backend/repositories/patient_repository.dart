@@ -22,4 +22,11 @@ class PatientRepository {
 
   Future<List<ReportModel>> getReports(String patientId) =>
       _apiService.getPatientReports(patientId);
+
+  SampleModel? getInitialSample(String patientId) =>
+      _apiService.getInitialSample(patientId);
+
+  List<ReportModel> getInitialReports(String patientId) =>
+      _apiService.getInitialReports(patientId);
 }
+
