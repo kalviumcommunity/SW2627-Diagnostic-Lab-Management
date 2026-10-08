@@ -220,6 +220,12 @@ class PatientApiService {
     return _reportStore.where((r) => r.patientId == patientId).toList();
   }
 
+  /// Synchronous retrieval of initial reports for instant UI hydration
+  List<ReportModel> getInitialReports(String patientId) {
+    _ensureInitialized();
+    return _reportStore.where((r) => r.patientId == patientId).toList();
+  }
+
   /// GET /api/patient/active-sample?patientId=...
   Future<SampleModel?> getActiveSample(String patientId) async {
     await Future.delayed(const Duration(milliseconds: 300));
@@ -227,4 +233,13 @@ class PatientApiService {
     if (samples.isNotEmpty) return samples.first;
     return null;
   }
+
+  /// Synchronous retrieval of initial active sample for instant UI hydration
+  SampleModel? getInitialSample(String patientId) {
+    _ensureInitialized();
+    final samples = _sampleStore.where((s) => s.patientId == patientId && s.status != SampleStatus.delivered).toList();
+    if (samples.isNotEmpty) return samples.first;
+    return null;
+  }
 }
+

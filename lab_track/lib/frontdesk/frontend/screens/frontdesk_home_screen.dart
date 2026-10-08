@@ -13,7 +13,7 @@ class FrontDeskHomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Front-Desk Instant Lookup & Dispatch'),
+        title: const Text('Front Desk Reception Portal'),
         actions: [
           IconButton(
             icon: const Icon(Icons.swap_horiz_rounded),

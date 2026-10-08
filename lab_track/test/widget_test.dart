@@ -21,6 +21,7 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
     // Verify login UI elements render
     expect(find.text('LabTrack'), findsOneWidget);
@@ -45,6 +46,7 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
     // Verify key UI elements render
     expect(find.text('Welcome, John Doe'), findsOneWidget);
