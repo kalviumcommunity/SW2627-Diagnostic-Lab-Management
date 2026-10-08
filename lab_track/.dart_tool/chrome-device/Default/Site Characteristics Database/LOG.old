@@ -1,9 +1,1 @@
-2026/10/08-10:48:59.750 8708 Log #3: 3 ops saved to Table #7 OK
-2026/10/08-10:48:59.757 8708 Archiving C:\Users\rusta\AppData\Local\Temp\flutter_tools.f76903dd\flutter_tools_chrome_device.5ed76914\Default\Site Characteristics Database/000003.log: OK
-2026/10/08-10:48:59.758 8708 Log #6: 1 ops saved to Table #8 OK
-2026/10/08-10:48:59.760 8708 Archiving C:\Users\rusta\AppData\Local\Temp\flutter_tools.f76903dd\flutter_tools_chrome_device.5ed76914\Default\Site Characteristics Database/000006.log: OK
-2026/10/08-10:48:59.760 8708 Table #4: 3 entries OK
-2026/10/08-10:48:59.760 8708 Table #7: 3 entries OK
-2026/10/08-10:48:59.760 8708 Table #8: 1 entries OK
-2026/10/08-10:48:59.764 8708 Archiving C:\Users\rusta\AppData\Local\Temp\flutter_tools.f76903dd\flutter_tools_chrome_device.5ed76914\Default\Site Characteristics Database/MANIFEST-000001: OK
-2026/10/08-10:48:59.768 8708 **** Repaired leveldb C:\Users\rusta\AppData\Local\Temp\flutter_tools.f76903dd\flutter_tools_chrome_device.5ed76914\Default\Site Characteristics Database; recovered 3 files; 603 bytes. Some data may have been lost. ****
+2026/10/08-10:48:59.772 8708 Reusing MANIFEST C:\Users\rusta\AppData\Local\Temp\flutter_tools.f76903dd\flutter_tools_chrome_device.5ed76914\Default\Site Characteristics Database/MANIFEST-000001

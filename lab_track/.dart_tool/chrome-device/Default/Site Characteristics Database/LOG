@@ -1,1 +1,20 @@
-2026/10/08-10:48:59.772 8708 Reusing MANIFEST C:\Users\rusta\AppData\Local\Temp\flutter_tools.f76903dd\flutter_tools_chrome_device.5ed76914\Default\Site Characteristics Database/MANIFEST-000001
+2026/10/08-11:09:19.983 8b78 Reusing MANIFEST C:\Users\rusta\AppData\Local\Temp\flutter_tools.2618ffb\flutter_tools_chrome_device.3a92ea40\Default\Site Characteristics Database/MANIFEST-000001
+2026/10/08-11:09:19.983 8b78 Recovering log #3
+2026/10/08-11:09:19.984 8b78 Level-0 table #10: started
+2026/10/08-11:09:19.987 8b78 Level-0 table #10: 219 bytes OK
+2026/10/08-11:09:19.987 8b78 Recovering log #6
+2026/10/08-11:09:19.987 8b78 Level-0 table #11: started
+2026/10/08-11:09:19.990 8b78 Level-0 table #11: 165 bytes OK
+2026/10/08-11:09:19.990 8b78 Recovering log #10
+2026/10/08-11:09:19.990 8b78 Reusing old log C:\Users\rusta\AppData\Local\Temp\flutter_tools.2618ffb\flutter_tools_chrome_device.3a92ea40\Default\Site Characteristics Database/000010.log 
+2026/10/08-11:09:19.992 8b78 Delete type=0 #3
+2026/10/08-11:09:19.992 8b78 Delete type=0 #6
+2026/10/08-11:09:19.993 8b78 Compacting 5@0 + 0@1 files
+2026/10/08-11:09:19.996 8b78 Generated table #12@0: 2 keys, 194 bytes
+2026/10/08-11:09:19.996 8b78 Compacted 5@0 + 0@1 files => 194 bytes
+2026/10/08-11:09:19.997 8b78 compacted to: files[ 0 1 0 0 0 0 0 ]
+2026/10/08-11:09:19.997 8b78 Delete type=2 #4
+2026/10/08-11:09:19.998 8b78 Delete type=2 #7
+2026/10/08-11:09:19.998 8b78 Delete type=2 #8
+2026/10/08-11:09:19.998 8b78 Delete type=2 #10
+2026/10/08-11:09:19.998 8b78 Delete type=2 #11
