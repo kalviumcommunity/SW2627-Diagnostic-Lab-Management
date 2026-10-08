@@ -1,22 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../auth/frontend/providers/auth_provider.dart';
-import '../../../shared/theme/app_colors.dart';
-
-class FrontDeskHomeScreen extends StatelessWidget {
-  const FrontDeskHomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final user = context.watch<AuthProvider>().currentUser;
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Front-Desk Instant Lookup & Dispatch'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.swap_horiz_rounded),
+import '../../../sha
             tooltip: 'Switch Portal / Role',
             onPressed: () => context.read<AuthProvider>().logout(),
           ),
