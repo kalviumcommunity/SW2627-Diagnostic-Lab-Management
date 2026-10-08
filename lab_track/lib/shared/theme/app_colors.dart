@@ -19,6 +19,7 @@ class AppColors {
   
   static const Color info = Color(0xFF3B82F6); // Blue for Processing
   static const Color infoLight = Color(0xFFDBEAFE);
+  static const Color infoDark = Color(0xFF1D4ED8);
 
   static const Color error = Color(0xFFEF4444);
   static const Color errorLight = Color(0xFFFEE2E2);
