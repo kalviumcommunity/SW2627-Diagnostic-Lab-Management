@@ -32,7 +32,9 @@ void main() {
 
   testWidgets('PatientHomeScreen smoke test', (WidgetTester tester) async {
     final authProvider = AuthProvider();
-    await authProvider.loginAsDemoPatient();
+    await tester.runAsync(() async {
+      await authProvider.loginAsDemoPatient();
+    });
 
     await tester.pumpWidget(
       MultiProvider(
@@ -46,7 +48,8 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
 
     // Verify key UI elements render
     expect(find.text('Welcome, John Doe'), findsOneWidget);

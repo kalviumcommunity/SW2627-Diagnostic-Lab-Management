@@ -1,1 +1,2 @@
-﻿// Home dashboard screen for front desk staff.
+// Re-export FrontDeskHomeScreen from clean architecture path
+export '../../../frontdesk/frontend/screens/frontdesk_home_screen.dart';

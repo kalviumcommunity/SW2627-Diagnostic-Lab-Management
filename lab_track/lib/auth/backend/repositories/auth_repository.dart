@@ -5,16 +5,32 @@ import '../../../domain/enums/user_role.dart';
 import '../../../data/models/user_model.dart';
 
 class AuthRepository {
-  final FirebaseAuth _firebaseAuth;
-  final FirebaseFirestore _firestore;
+  final FirebaseAuth? _firebaseAuth;
+  final FirebaseFirestore? _firestore;
 
   UserModel? _cachedUser;
 
   AuthRepository({
     FirebaseAuth? firebaseAuth,
     FirebaseFirestore? firestore,
-  })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance;
+  })  : _firebaseAuth = firebaseAuth ?? _tryGetFirebaseAuth(),
+        _firestore = firestore ?? _tryGetFirestore();
+
+  static FirebaseAuth? _tryGetFirebaseAuth() {
+    try {
+      return FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static FirebaseFirestore? _tryGetFirestore() {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   UserModel? get cachedUser => _cachedUser;
 
@@ -102,6 +118,11 @@ class AuthRepository {
       return;
     }
 
+    if (_firebaseAuth == null) {
+      onError('Firebase Auth is not available in offline/demo mode. Please use demo login.');
+      return;
+    }
+
     try {
       await _firebaseAuth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
@@ -136,6 +157,10 @@ class AuthRepository {
       return user;
     }
 
+    if (_firebaseAuth == null) {
+      throw Exception('Firebase Auth is not available in offline/demo mode.');
+    }
+
     try {
       final credential = PhoneAuthProvider.credential(
         verificationId: verificationId,
@@ -144,15 +169,17 @@ class AuthRepository {
       final userCredential = await _firebaseAuth.signInWithCredential(credential);
       final uid = userCredential.user?.uid ?? 'unknown_uid';
 
-      try {
-        final doc = await _firestore.collection('users').doc(uid).get();
-        if (doc.exists && doc.data() != null) {
-          final user = UserModel.fromMap(doc.data()!, documentId: uid);
-          _cachedUser = user;
-          return user;
+      if (_firestore != null) {
+        try {
+          final doc = await _firestore.collection('users').doc(uid).get();
+          if (doc.exists && doc.data() != null) {
+            final user = UserModel.fromMap(doc.data()!, documentId: uid);
+            _cachedUser = user;
+            return user;
+          }
+        } catch (e) {
+          debugPrint('Firestore fetch user error: $e');
         }
-      } catch (e) {
-        debugPrint('Firestore fetch user error: $e');
       }
 
       final newUser = UserModel(
@@ -171,16 +198,20 @@ class AuthRepository {
 
   Future<UserModel> saveProfile(UserModel user) async {
     _cachedUser = user;
-    try {
-      await _firestore.collection('users').doc(user.id).set(user.toMap(), SetOptions(merge: true));
-    } catch (_) {}
+    if (_firestore != null) {
+      try {
+        await _firestore.collection('users').doc(user.id).set(user.toMap(), SetOptions(merge: true));
+      } catch (_) {}
+    }
     return user;
   }
 
   Future<void> signOut() async {
-    try {
-      await _firebaseAuth.signOut();
-    } catch (_) {}
+    if (_firebaseAuth != null) {
+      try {
+        await _firebaseAuth.signOut();
+      } catch (_) {}
+    }
     _cachedUser = null;
   }
 }
