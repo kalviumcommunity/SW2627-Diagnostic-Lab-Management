@@ -27,6 +27,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 1-Click Role Login for Quick Navigation / Persona Testing
   Future<bool> loginAsRole(UserRole role) async {
     _isLoading = true;
     _errorMessage = null;
@@ -40,7 +41,7 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _isLoading = false;
-      _errorMessage = e.toString();
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
       notifyListeners();
       return false;
     }
@@ -48,6 +49,83 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> loginAsDemoPatient() async {
     return loginAsRole(UserRole.patient);
+  }
+
+  /// Email & Password Sign In
+  Future<bool> loginWithEmail(String email, String password) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final user = await _authRepository.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      _currentUser = user;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Email & Password Registration (Sign Up)
+  Future<bool> signUp({
+    required String name,
+    required String email,
+    required String password,
+    required UserRole role,
+    String? phoneNumber,
+    String? branchId,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final user = await _authRepository.signUpWithEmailAndPassword(
+        name: name,
+        email: email,
+        password: password,
+        role: role,
+        phoneNumber: phoneNumber,
+        branchId: branchId,
+      );
+      _currentUser = user;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Google Authentication Sign In
+  Future<bool> loginWithGoogle() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final user = await _authRepository.signInWithGoogle();
+      _currentUser = user;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<bool> sendOtp(String phoneNumber) async {
