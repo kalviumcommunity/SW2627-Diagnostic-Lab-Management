@@ -22,6 +22,7 @@ class DefaultFirebaseOptions {
         appId: '1:939933930947:web:751beb3e09287efdf85976',
         messagingSenderId: '939933930947',
         projectId: 'lab-track-f8a33',
+        authDomain: 'lab-track-f8a33.firebaseapp.com',
         storageBucket: 'lab-track-f8a33.firebasestorage.app',
       );
     }

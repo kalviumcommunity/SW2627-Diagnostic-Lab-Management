@@ -208,7 +208,7 @@ class _OtpScreenState extends State<OtpScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: AppColors.accentLight.withValues(alpha: 0.5),
+                          color: AppColors.accentLight.withOpacity(0.5),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Row(

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/enums/sample_status.dart';
 import 'sample_event_model.dart';
 
@@ -6,98 +7,180 @@ class SampleModel {
   final String orderId;
   final String patientId;
   final String patientName;
-  final List<String> testNames;
-  final String vialType;
+  final String patientPhone;
+  final String tubeType;
   final SampleStatus status;
+  final String? currentCustodianId;
+  final String? currentCustodianRole;
   final String? currentBranchId;
   final String? currentBranchName;
-  final String? assignedPhlebotomistId;
   final String? assignedPhlebotomistName;
-  final DateTime? collectionTime;
-  final String? temperatureStatus;
+  final DateTime? collectedAt;
+  final double? temperatureC;
+  final DateTime? lastEventAt;
+  final DateTime createdAt;
+  final List<String> searchKeywords;
+
+  // Compatibility and UI helper fields
+  final List<String> testNames;
   final String? notes;
   final List<SampleEventModel> events;
-  final DateTime createdAt;
 
   const SampleModel({
     required this.barcode,
     required this.orderId,
     required this.patientId,
     required this.patientName,
-    required this.testNames,
-    required this.vialType,
+    this.patientPhone = '',
+    required this.tubeType,
     this.status = SampleStatus.booked,
+    this.currentCustodianId,
+    this.currentCustodianRole,
     this.currentBranchId,
     this.currentBranchName,
-    this.assignedPhlebotomistId,
     this.assignedPhlebotomistName,
-    this.collectionTime,
-    this.temperatureStatus,
+    this.collectedAt,
+    this.temperatureC,
+    this.lastEventAt,
+    required this.createdAt,
+    this.searchKeywords = const [],
+    this.testNames = const [],
     this.notes,
     this.events = const [],
-    required this.createdAt,
   });
+
+  // Non-breaking aliases for existing UI code
+  String get vialType => tubeType;
+  String? get assignedPhlebotomistId => currentCustodianId;
+  DateTime? get collectionTime => collectedAt;
+  String? get temperatureStatus {
+    if (temperatureC != null) {
+      return '${temperatureC!.toStringAsFixed(1)}°C (Cold Chain)';
+    }
+    return null;
+  }
+
+  static List<String> generateSearchKeywords({
+    required String barcode,
+    required String orderId,
+    required String patientPhone,
+    required String patientName,
+  }) {
+    final set = <String>{};
+    if (barcode.trim().isNotEmpty) {
+      set.add(barcode.trim().toLowerCase());
+    }
+    if (orderId.trim().isNotEmpty) {
+      set.add(orderId.trim().toLowerCase());
+    }
+    if (patientPhone.trim().isNotEmpty) {
+      set.add(patientPhone.trim().toLowerCase());
+      final digits = patientPhone.replaceAll(RegExp(r'\D'), '');
+      if (digits.isNotEmpty) set.add(digits);
+    }
+    if (patientName.trim().isNotEmpty) {
+      set.add(patientName.trim().toLowerCase());
+      final tokens = patientName.trim().toLowerCase().split(RegExp(r'\s+'));
+      for (final t in tokens) {
+        if (t.isNotEmpty) set.add(t);
+      }
+    }
+    return set.toList();
+  }
 
   SampleModel copyWith({
     String? barcode,
     String? orderId,
     String? patientId,
     String? patientName,
-    List<String>? testNames,
+    String? patientPhone,
+    String? tubeType,
     String? vialType,
     SampleStatus? status,
+    String? currentCustodianId,
+    String? assignedPhlebotomistId,
+    String? currentCustodianRole,
     String? currentBranchId,
     String? currentBranchName,
-    String? assignedPhlebotomistId,
     String? assignedPhlebotomistName,
+    DateTime? collectedAt,
     DateTime? collectionTime,
+    double? temperatureC,
     String? temperatureStatus,
+    DateTime? lastEventAt,
+    DateTime? createdAt,
+    List<String>? searchKeywords,
+    List<String>? testNames,
     String? notes,
     List<SampleEventModel>? events,
-    DateTime? createdAt,
   }) {
     return SampleModel(
       barcode: barcode ?? this.barcode,
       orderId: orderId ?? this.orderId,
       patientId: patientId ?? this.patientId,
       patientName: patientName ?? this.patientName,
-      testNames: testNames ?? this.testNames,
-      vialType: vialType ?? this.vialType,
+      patientPhone: patientPhone ?? this.patientPhone,
+      tubeType: tubeType ?? vialType ?? this.tubeType,
       status: status ?? this.status,
+      currentCustodianId: currentCustodianId ?? assignedPhlebotomistId ?? this.currentCustodianId,
+      currentCustodianRole: currentCustodianRole ?? this.currentCustodianRole,
       currentBranchId: currentBranchId ?? this.currentBranchId,
       currentBranchName: currentBranchName ?? this.currentBranchName,
-      assignedPhlebotomistId: assignedPhlebotomistId ?? this.assignedPhlebotomistId,
       assignedPhlebotomistName: assignedPhlebotomistName ?? this.assignedPhlebotomistName,
-      collectionTime: collectionTime ?? this.collectionTime,
-      temperatureStatus: temperatureStatus ?? this.temperatureStatus,
+      collectedAt: collectedAt ?? collectionTime ?? this.collectedAt,
+      temperatureC: temperatureC ?? this.temperatureC,
+      lastEventAt: lastEventAt ?? this.lastEventAt,
+      createdAt: createdAt ?? this.createdAt,
+      searchKeywords: searchKeywords ?? this.searchKeywords,
+      testNames: testNames ?? this.testNames,
       notes: notes ?? this.notes,
       events: events ?? this.events,
-      createdAt: createdAt ?? this.createdAt,
     );
   }
 
   Map<String, dynamic> toMap() {
+    final keywords = searchKeywords.isNotEmpty
+        ? searchKeywords
+        : generateSearchKeywords(
+            barcode: barcode,
+            orderId: orderId,
+            patientPhone: patientPhone,
+            patientName: patientName,
+          );
+
     return {
-      'barcode': barcode,
       'orderId': orderId,
       'patientId': patientId,
       'patientName': patientName,
-      'testNames': testNames,
-      'vialType': vialType,
-      'status': status.toValue(),
+      'patientPhone': patientPhone,
+      'tubeType': tubeType,
+      'status': status.name,
+      'currentCustodianId': currentCustodianId,
+      'currentCustodianRole': currentCustodianRole,
       'currentBranchId': currentBranchId,
-      'currentBranchName': currentBranchName,
-      'assignedPhlebotomistId': assignedPhlebotomistId,
-      'assignedPhlebotomistName': assignedPhlebotomistName,
-      'collectionTime': collectionTime?.toIso8601String(),
-      'temperatureStatus': temperatureStatus,
-      'notes': notes,
-      'events': events.map((e) => e.toMap()).toList(),
-      'createdAt': createdAt.toIso8601String(),
+      'collectedAt': collectedAt != null ? Timestamp.fromDate(collectedAt!) : null,
+      'temperatureC': temperatureC,
+      'lastEventAt': lastEventAt != null
+          ? Timestamp.fromDate(lastEventAt!)
+          : Timestamp.fromDate(createdAt),
+      'createdAt': Timestamp.fromDate(createdAt),
+      'searchKeywords': keywords,
+      if (testNames.isNotEmpty) 'testNames': testNames,
+      if (currentBranchName != null) 'currentBranchName': currentBranchName,
+      if (assignedPhlebotomistName != null) 'assignedPhlebotomistName': assignedPhlebotomistName,
+      if (notes != null) 'notes': notes,
     };
   }
 
   factory SampleModel.fromMap(Map<String, dynamic> map, {String? documentId}) {
+    DateTime? parseDate(dynamic val) {
+      if (val == null) return null;
+      if (val is Timestamp) return val.toDate();
+      if (val is DateTime) return val;
+      if (val is String) return DateTime.tryParse(val);
+      return null;
+    }
+
     final rawEvents = map['events'];
     List<SampleEventModel> eventList = [];
     if (rawEvents is List) {
@@ -106,27 +189,58 @@ class SampleModel {
           .toList();
     }
 
+    final rawKeywords = map['searchKeywords'];
+    List<String> keywords = [];
+    if (rawKeywords is List) {
+      keywords = rawKeywords.map((e) => e.toString()).toList();
+    }
+
+    double? parseTemp(dynamic val) {
+      if (val == null) return null;
+      if (val is num) return val.toDouble();
+      if (val is String) {
+        final numPart = RegExp(r'[-+]?[0-9]*\.?[0-9]+').firstMatch(val)?.group(0);
+        return numPart != null ? double.tryParse(numPart) : null;
+      }
+      return null;
+    }
+
+    final barcode = documentId ?? map['barcode']?.toString() ?? '';
+    final orderId = map['orderId']?.toString() ?? '';
+    final patientId = map['patientId']?.toString() ?? '';
+    final patientName = map['patientName']?.toString() ?? '';
+    final patientPhone = map['patientPhone']?.toString() ?? '';
+
+    if (keywords.isEmpty) {
+      keywords = generateSearchKeywords(
+        barcode: barcode,
+        orderId: orderId,
+        patientPhone: patientPhone,
+        patientName: patientName,
+      );
+    }
+
     return SampleModel(
-      barcode: documentId ?? map['barcode']?.toString() ?? '',
-      orderId: map['orderId']?.toString() ?? '',
-      patientId: map['patientId']?.toString() ?? '',
-      patientName: map['patientName']?.toString() ?? '',
-      testNames: (map['testNames'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
-      vialType: map['vialType']?.toString() ?? 'Standard EDTA',
+      barcode: barcode,
+      orderId: orderId,
+      patientId: patientId,
+      patientName: patientName,
+      patientPhone: patientPhone,
+      tubeType: map['tubeType']?.toString() ?? map['vialType']?.toString() ?? 'Standard EDTA',
       status: SampleStatus.fromString(map['status']?.toString()),
+      currentCustodianId: map['currentCustodianId']?.toString() ?? map['assignedPhlebotomistId']?.toString(),
+      currentCustodianRole: map['currentCustodianRole']?.toString(),
       currentBranchId: map['currentBranchId']?.toString(),
       currentBranchName: map['currentBranchName']?.toString(),
-      assignedPhlebotomistId: map['assignedPhlebotomistId']?.toString(),
       assignedPhlebotomistName: map['assignedPhlebotomistName']?.toString(),
-      collectionTime: map['collectionTime'] != null
-          ? DateTime.tryParse(map['collectionTime'].toString())
-          : null,
-      temperatureStatus: map['temperatureStatus']?.toString(),
+      collectedAt: parseDate(map['collectedAt']) ?? parseDate(map['collectionTime']),
+      temperatureC: parseTemp(map['temperatureC']) ?? parseTemp(map['temperatureStatus']),
+      lastEventAt: parseDate(map['lastEventAt']),
+      createdAt: parseDate(map['createdAt']) ?? DateTime.now(),
+      searchKeywords: keywords,
+      testNames: (map['testNames'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
       notes: map['notes']?.toString(),
       events: eventList,
-      createdAt: map['createdAt'] != null
-          ? DateTime.tryParse(map['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
     );
   }
 }

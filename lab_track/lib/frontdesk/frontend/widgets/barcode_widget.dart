@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' show PaintingStyle, Rect;
 
 class BarcodeWidget extends StatelessWidget {
   final String code;

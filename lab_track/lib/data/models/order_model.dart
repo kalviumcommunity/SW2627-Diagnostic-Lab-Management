@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/enums/order_status.dart';
 
 class OrderModel {
@@ -18,6 +19,7 @@ class OrderModel {
   final String? assignedPhlebotomistName;
   final String? specialInstructions;
   final DateTime createdAt;
+  final DateTime? updatedAt;
 
   const OrderModel({
     required this.id,
@@ -37,6 +39,7 @@ class OrderModel {
     this.assignedPhlebotomistName,
     this.specialInstructions,
     required this.createdAt,
+    this.updatedAt,
   });
 
   OrderModel copyWith({
@@ -57,6 +60,7 @@ class OrderModel {
     String? assignedPhlebotomistName,
     String? specialInstructions,
     DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return OrderModel(
       id: id ?? this.id,
@@ -76,32 +80,43 @@ class OrderModel {
       assignedPhlebotomistName: assignedPhlebotomistName ?? this.assignedPhlebotomistName,
       specialInstructions: specialInstructions ?? this.specialInstructions,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'patientId': patientId,
       'patientName': patientName,
       'patientPhone': patientPhone,
       'collectionAddress': collectionAddress,
       'testNames': testNames,
       'totalAmount': totalAmount,
-      'scheduledDate': scheduledDate.toIso8601String(),
+      'scheduledDate': Timestamp.fromDate(scheduledDate),
       'timeSlot': timeSlot,
       'branchId': branchId,
       'branchName': branchName,
-      'status': status.toValue(),
+      'status': status.name,
       'sampleBarcodes': sampleBarcodes,
       'assignedPhlebotomistId': assignedPhlebotomistId,
       'assignedPhlebotomistName': assignedPhlebotomistName,
       'specialInstructions': specialInstructions,
-      'createdAt': createdAt.toIso8601String(),
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': updatedAt != null
+          ? Timestamp.fromDate(updatedAt!)
+          : Timestamp.fromDate(createdAt),
     };
   }
 
   factory OrderModel.fromMap(Map<String, dynamic> map, {String? documentId}) {
+    DateTime parseDate(dynamic val) {
+      if (val == null) return DateTime.now();
+      if (val is Timestamp) return val.toDate();
+      if (val is DateTime) return val;
+      if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
+      return DateTime.now();
+    }
+
     return OrderModel(
       id: documentId ?? map['id']?.toString() ?? '',
       patientId: map['patientId']?.toString() ?? '',
@@ -112,9 +127,7 @@ class OrderModel {
       totalAmount: (map['totalAmount'] != null)
           ? double.tryParse(map['totalAmount'].toString()) ?? 0.0
           : 0.0,
-      scheduledDate: map['scheduledDate'] != null
-          ? DateTime.tryParse(map['scheduledDate'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      scheduledDate: parseDate(map['scheduledDate']),
       timeSlot: map['timeSlot']?.toString() ?? '',
       branchId: map['branchId']?.toString() ?? '',
       branchName: map['branchName']?.toString() ?? '',
@@ -123,9 +136,8 @@ class OrderModel {
       assignedPhlebotomistId: map['assignedPhlebotomistId']?.toString(),
       assignedPhlebotomistName: map['assignedPhlebotomistName']?.toString(),
       specialInstructions: map['specialInstructions']?.toString(),
-      createdAt: map['createdAt'] != null
-          ? DateTime.tryParse(map['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      createdAt: parseDate(map['createdAt']),
+      updatedAt: map['updatedAt'] != null ? parseDate(map['updatedAt']) : null,
     );
   }
 }
