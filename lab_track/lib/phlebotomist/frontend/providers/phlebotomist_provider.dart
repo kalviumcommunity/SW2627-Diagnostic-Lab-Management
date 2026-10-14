@@ -5,6 +5,8 @@ import '../../../domain/enums/order_status.dart';
 import '../../backend/models/phlebotomist_collection_request.dart';
 import '../../backend/repositories/phlebotomist_repository.dart';
 
+import '../../../data/services/central_data_store.dart';
+
 /// State management for the Field Phlebotomist App (pickups, route, barcode scanning, cold-chain).
 class PhlebotomistProvider extends ChangeNotifier {
   final PhlebotomistRepository _repository;
@@ -25,6 +27,17 @@ class PhlebotomistProvider extends ChangeNotifier {
   PhlebotomistProvider({PhlebotomistRepository? repository})
       : _repository = repository ?? PhlebotomistRepository() {
     refreshPickups('PH-204');
+    CentralDataStore.instance.addListener(_onStoreChanged);
+  }
+
+  void _onStoreChanged() {
+    refreshPickups('PH-204');
+  }
+
+  @override
+  void dispose() {
+    CentralDataStore.instance.removeListener(_onStoreChanged);
+    super.dispose();
   }
 
   // Getters

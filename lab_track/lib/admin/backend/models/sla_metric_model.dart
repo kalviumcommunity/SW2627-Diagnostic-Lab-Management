@@ -82,16 +82,20 @@ class StaffAllocationModel {
   const StaffAllocationModel({
     required this.id,
     required this.name,
-    required this.email,
-    required this.phoneNumber,
+    this.email = '',
+    this.phoneNumber = '',
     required this.role,
     required this.assignedBranchId,
     required this.assignedBranchName,
     required this.isOnDuty,
-    required this.todayCompletedTasks,
-    required this.pendingTasks,
+    this.todayCompletedTasks = 0,
+    this.pendingTasks = 0,
     this.avgRating = 4.9,
   });
+
+  int get activeTaskCount => pendingTasks;
+  String get contactNumber => phoneNumber;
+
 
   StaffAllocationModel copyWith({
     String? id,

@@ -2,10 +2,12 @@ import 'package:flutter/foundation.dart';
 import '../../../data/models/order_model.dart';
 import '../../../data/models/sample_model.dart';
 import '../../../data/models/report_model.dart';
+import '../../../data/services/central_data_store.dart';
 import '../../backend/models/patient_booking_request.dart';
 import '../../backend/repositories/patient_repository.dart';
 
-/// Patient State Manager (acts like React Context / Redux Store in MERN frontend)
+/// Patient State Manager
+/// Auto-syncs live updates from Phlebotomist, Front Desk, Lab, and Pathologist.
 class PatientProvider extends ChangeNotifier {
   final PatientRepository _repository;
 
@@ -27,6 +29,19 @@ class PatientProvider extends ChangeNotifier {
     _activeSample = _repository.getInitialSample('PT-84210');
     _reports = _repository.getInitialReports('PT-84210');
     refreshPatientData('PT-84210');
+
+    // Cross-role reactive sync
+    CentralDataStore.instance.addListener(_onStoreChanged);
+  }
+
+  void _onStoreChanged() {
+    refreshPatientData('PT-84210');
+  }
+
+  @override
+  void dispose() {
+    CentralDataStore.instance.removeListener(_onStoreChanged);
+    super.dispose();
   }
 
   Future<void> refreshPatientData(String patientId) async {

@@ -7,6 +7,8 @@ import '../../backend/models/thermal_label_model.dart';
 import '../../backend/models/frontdesk_search_item.dart';
 import '../../backend/repositories/frontdesk_repository.dart';
 
+import '../../../data/services/central_data_store.dart';
+
 class FrontDeskProvider extends ChangeNotifier {
   final FrontDeskRepository _repository;
 
@@ -26,6 +28,17 @@ class FrontDeskProvider extends ChangeNotifier {
   FrontDeskProvider({FrontDeskRepository? repository})
       : _repository = repository ?? FrontDeskRepository() {
     _init();
+    CentralDataStore.instance.addListener(_onStoreChanged);
+  }
+
+  void _onStoreChanged() {
+    refreshSearch();
+  }
+
+  @override
+  void dispose() {
+    CentralDataStore.instance.removeListener(_onStoreChanged);
+    super.dispose();
   }
 
   // Getters
