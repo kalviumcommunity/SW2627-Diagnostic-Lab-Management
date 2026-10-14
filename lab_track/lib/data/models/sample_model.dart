@@ -26,28 +26,42 @@ class SampleModel {
   final String? notes;
   final List<SampleEventModel> events;
 
-  const SampleModel({
+  SampleModel({
     required this.barcode,
     required this.orderId,
     required this.patientId,
     required this.patientName,
     this.patientPhone = '',
-    required this.tubeType,
+    String? tubeType,
+    String? vialType,
     this.status = SampleStatus.booked,
-    this.currentCustodianId,
+    String? currentCustodianId,
+    String? assignedPhlebotomistId,
     this.currentCustodianRole,
     this.currentBranchId,
     this.currentBranchName,
     this.assignedPhlebotomistName,
-    this.collectedAt,
-    this.temperatureC,
+    DateTime? collectedAt,
+    DateTime? collectionTime,
+    double? temperatureC,
+    String? temperatureStatus,
     this.lastEventAt,
-    required this.createdAt,
+    DateTime? createdAt,
     this.searchKeywords = const [],
     this.testNames = const [],
     this.notes,
     this.events = const [],
-  });
+  })  : tubeType = tubeType ?? vialType ?? 'Standard Collection Tube',
+        currentCustodianId = currentCustodianId ?? assignedPhlebotomistId,
+        collectedAt = collectedAt ?? collectionTime,
+        temperatureC = temperatureC ?? _parseTemp(temperatureStatus),
+        createdAt = createdAt ?? DateTime.now();
+
+  static double? _parseTemp(String? tempStr) {
+    if (tempStr == null) return null;
+    final match = RegExp(r'([0-9]+\.?[0-9]*)').firstMatch(tempStr);
+    return match != null ? double.tryParse(match.group(1)!) : null;
+  }
 
   // Non-breaking aliases for existing UI code
   String get vialType => tubeType;

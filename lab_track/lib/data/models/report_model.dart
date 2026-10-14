@@ -63,13 +63,21 @@ class ReportModel {
     this.patientName = '',
     required this.status,
     this.pdfUrl,
-    this.uploadedById,
-    this.uploadedAt,
-    this.verifiedAt,
-    this.testResults = const [],
+    String? uploadedById,
+    String? pathologistName,
+    DateTime? uploadedAt,
+    DateTime? createdAt,
+    DateTime? verifiedAt,
+    DateTime? verificationDate,
+    List<ReportParameter>? testResults,
+    List<ReportParameter>? parameters,
+    bool? isReady,
     this.testName = '',
     this.branchName = '',
-  });
+  })  : uploadedById = uploadedById ?? pathologistName,
+        uploadedAt = uploadedAt ?? createdAt,
+        verifiedAt = verifiedAt ?? verificationDate,
+        testResults = testResults ?? parameters ?? const [];
 
   // Non-breaking aliases for existing UI code
   List<ReportParameter> get parameters => testResults;

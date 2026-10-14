@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/enums/user_role.dart';
 import '../../../shared/theme/app_colors.dart';
 import 'role_auth_screen.dart';
+import 'signup_screen.dart';
 
 /// Startup screen presenting the 4 core diagnostic system personas:
 /// 1. Patient

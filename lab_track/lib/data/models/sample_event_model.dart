@@ -24,17 +24,24 @@ class SampleEventModel {
     required this.sampleBarcode,
     this.orderId = '',
     this.fromStatus,
-    required this.toStatus,
+    SampleStatus? toStatus,
+    SampleStatus? status,
     required this.timestamp,
     required this.actorId,
     required this.actorName,
     required this.actorRole,
-    this.branchId,
+    String? branchId,
     this.latitude,
     this.longitude,
-    this.temperatureC,
-    this.note,
-  });
+    double? temperatureC,
+    double? temperatureCelsius,
+    String? note,
+    String? notes,
+    String? locationName,
+  })  : toStatus = toStatus ?? status ?? SampleStatus.booked,
+        branchId = branchId ?? locationName,
+        temperatureC = temperatureC ?? temperatureCelsius,
+        note = note ?? notes;
 
   // Non-breaking aliases for existing UI code
   SampleStatus get status => toStatus;
