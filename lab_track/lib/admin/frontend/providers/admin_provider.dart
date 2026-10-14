@@ -3,6 +3,8 @@ import '../../../data/models/branch_model.dart';
 import '../../backend/models/sla_metric_model.dart';
 import '../../backend/repositories/admin_repository.dart';
 
+import '../../../data/services/central_data_store.dart';
+
 class AdminProvider extends ChangeNotifier {
   final AdminRepository _repository;
 
@@ -23,6 +25,17 @@ class AdminProvider extends ChangeNotifier {
   AdminProvider({AdminRepository? repository})
       : _repository = repository ?? AdminRepository() {
     loadAllData();
+    CentralDataStore.instance.addListener(_onStoreChanged);
+  }
+
+  void _onStoreChanged() {
+    loadAllData();
+  }
+
+  @override
+  void dispose() {
+    CentralDataStore.instance.removeListener(_onStoreChanged);
+    super.dispose();
   }
 
   bool get isLoading => _isLoading;
