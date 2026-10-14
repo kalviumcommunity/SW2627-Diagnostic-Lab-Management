@@ -28,6 +28,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 1-Click Role Login for Quick Navigation / Persona Testing
   Future<bool> loginAsRole(UserRole role) async {
     _isLoading = true;
     _errorMessage = null;
@@ -41,7 +42,7 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _isLoading = false;
-      _errorMessage = e.toString();
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
       notifyListeners();
       return false;
     }
@@ -53,6 +54,33 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> signInWithGoogle({UserRole role = UserRole.patient}) async {
     return _runAuth(() => _authRepository.signInWithGoogle(role: role));
+  }
+
+  /// Alias for backward compatibility
+  Future<bool> loginWithGoogle() => signInWithGoogle();
+
+  /// Alias for backward compatibility
+  Future<bool> loginWithEmail(String email, String password, {UserRole role = UserRole.patient}) {
+    return loginWithCredentials(role: role, email: email, password: password);
+  }
+
+  /// Alias for backward compatibility
+  Future<bool> signUp({
+    required String name,
+    required String email,
+    required String password,
+    required UserRole role,
+    String? phoneNumber,
+    String? branchId,
+  }) {
+    return signUpWithCredentials(
+      role: role,
+      name: name,
+      email: email,
+      password: password,
+      phoneNumber: phoneNumber,
+      assignedBranchId: branchId,
+    );
   }
 
   Future<bool> sendOtp(String phoneNumber, {UserRole role = UserRole.patient}) async {

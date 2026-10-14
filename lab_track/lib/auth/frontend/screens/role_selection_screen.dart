@@ -153,7 +153,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   ),
                   const SizedBox(height: 18),
 
-                  // Phone OTP Login Button
+                  // Enterprise Login Button
                   OutlinedButton.icon(
                     onPressed: () {
                       Navigator.push(
@@ -163,9 +163,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                         ),
                       );
                     },
-                    icon: const Icon(Icons.phone_android_rounded, size: 20, color: AppColors.textPrimary),
+                    icon: const Icon(Icons.login_rounded, size: 20, color: AppColors.textPrimary),
                     label: const Text(
-                      'Log in with Mobile Phone & OTP',
+                      'Sign In with Email, Phone, or Google',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
@@ -178,6 +178,19 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const SignupScreen()),
+                        );
+                      },
+                      icon: const Icon(Icons.person_add_rounded, size: 18),
+                      label: const Text('New User? Register / Sign Up', style: TextStyle(fontWeight: FontWeight.w700)),
                     ),
                   ),
                   const SizedBox(height: 24),
