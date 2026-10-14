@@ -93,6 +93,62 @@ class AuthRepository {
     return user;
   }
 
+  Future<UserModel> signInWithGoogle({UserRole role = UserRole.patient}) async {
+    try {
+      final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+      googleProvider.addScope('email');
+      googleProvider.addScope('profile');
+
+      final UserCredential userCredential;
+      if (kIsWeb) {
+        userCredential = await _firebaseAuth.signInWithPopup(googleProvider);
+      } else {
+        userCredential = await _firebaseAuth.signInWithProvider(googleProvider);
+      }
+
+      final fbUser = userCredential.user;
+      if (fbUser == null) {
+        throw Exception('Google Sign-In was cancelled or failed.');
+      }
+
+      final uid = fbUser.uid;
+      try {
+        final doc = await _firestore.collection('users').doc(uid).get();
+        if (doc.exists && doc.data() != null) {
+          final existingUser = UserModel.fromMap(doc.data()!, documentId: uid);
+          _cachedUser = existingUser;
+          return existingUser;
+        }
+      } catch (e) {
+        debugPrint('Firestore fetch user error: $e');
+      }
+
+      final newUser = UserModel(
+        id: uid,
+        name: fbUser.displayName ?? 'Google Patient',
+        phoneNumber: fbUser.phoneNumber ?? defaultDemoPatient.phoneNumber,
+        email: fbUser.email,
+        role: role,
+        createdAt: DateTime.now(),
+      );
+
+      try {
+        await _firestore.collection('users').doc(uid).set(
+          newUser.toMap(),
+          SetOptions(merge: true),
+        );
+      } catch (e) {
+        debugPrint('Firestore save user error: $e');
+      }
+
+      _cachedUser = newUser;
+      return newUser;
+    } catch (e) {
+      debugPrint('Google Sign-In Error: $e');
+      rethrow;
+    }
+  }
+
   /// Sends OTP to the specified phone number.
   /// Returns verificationId via callbacks.
   Future<void> sendOtp({

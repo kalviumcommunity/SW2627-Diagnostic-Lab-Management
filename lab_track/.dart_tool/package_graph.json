@@ -363,6 +363,11 @@
       "dependencies": []
     },
     {
+      "name": "meta",
+      "version": "1.19.0",
+      "dependencies": []
+    },
+    {
       "name": "logging",
       "version": "1.3.0",
       "dependencies": []
@@ -552,6 +557,11 @@
         "matcher",
         "meta"
       ]
+    },
+    {
+      "name": "vector_math",
+      "version": "2.4.3",
+      "dependencies": []
     },
     {
       "name": "stack_trace",
@@ -744,15 +754,6 @@
         "flutter",
         "flutter_cache_manager",
         "material_ui"
-      ]
-    },
-    {
-      "name": "flutter_localizations",
-      "version": "0.0.0",
-      "dependencies": [
-        "flutter",
-        "intl",
-        "path"
       ]
     },
     {
@@ -1150,6 +1151,15 @@
       ]
     },
     {
+      "name": "flutter_localizations",
+      "version": "0.0.0",
+      "dependencies": [
+        "flutter",
+        "intl",
+        "path"
+      ]
+    },
+    {
       "name": "sqflite",
       "version": "2.4.4",
       "dependencies": [
@@ -1403,16 +1413,6 @@
       "dependencies": [
         "ffi"
       ]
-    },
-    {
-      "name": "meta",
-      "version": "1.19.0",
-      "dependencies": []
-    },
-    {
-      "name": "vector_math",
-      "version": "2.4.3",
-      "dependencies": []
     }
   ],
   "configVersion": 1

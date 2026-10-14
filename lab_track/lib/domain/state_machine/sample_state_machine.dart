@@ -63,3 +63,13 @@ class SampleStateMachine {
     );
   }
 }
+
+/// Custom exception thrown when attempting an illegal sample status transition.
+class InvalidTransitionException implements Exception {
+  final String message;
+  const InvalidTransitionException(this.message);
+
+  @override
+  String toString() => 'InvalidTransitionException: $message';
+}
+

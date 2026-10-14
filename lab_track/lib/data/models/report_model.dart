@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class ReportParameter {
   final String name;
   final String value;
@@ -39,54 +41,81 @@ class ReportParameter {
 class ReportModel {
   final String id;
   final String orderId;
-  final String patientId;
   final String sampleBarcode;
-  final String testName;
-  final String branchName;
-  final String pathologistName;
-  final DateTime? verificationDate;
-  final bool isReady;
+  final String patientId;
+  final String patientName;
   final String status;
   final String? pdfUrl;
-  final List<ReportParameter> parameters;
-  final DateTime createdAt;
+  final String? uploadedById;
+  final DateTime? uploadedAt;
+  final DateTime? verifiedAt;
+  final List<ReportParameter> testResults;
+
+  // Compatibility fields for existing UI screens
+  final String testName;
+  final String branchName;
 
   const ReportModel({
     required this.id,
     required this.orderId,
-    required this.patientId,
     required this.sampleBarcode,
-    required this.testName,
-    required this.branchName,
-    required this.pathologistName,
-    this.verificationDate,
-    required this.isReady,
+    required this.patientId,
+    this.patientName = '',
     required this.status,
     this.pdfUrl,
-    this.parameters = const [],
-    required this.createdAt,
-  });
+    String? uploadedById,
+    String? pathologistName,
+    DateTime? uploadedAt,
+    DateTime? createdAt,
+    DateTime? verifiedAt,
+    DateTime? verificationDate,
+    List<ReportParameter>? testResults,
+    List<ReportParameter>? parameters,
+    bool? isReady,
+    this.testName = '',
+    this.branchName = '',
+  })  : uploadedById = uploadedById ?? pathologistName,
+        uploadedAt = uploadedAt ?? createdAt,
+        verifiedAt = verifiedAt ?? verificationDate,
+        testResults = testResults ?? parameters ?? const [];
+
+  // Non-breaking aliases for existing UI code
+  List<ReportParameter> get parameters => testResults;
+  DateTime get createdAt => uploadedAt ?? DateTime.now();
+  DateTime? get verificationDate => verifiedAt;
+  String? get pathologistName => uploadedById;
+  bool get isReady =>
+      status.toLowerCase() == 'verified' ||
+      status.toLowerCase() == 'ready' ||
+      status.toLowerCase() == 'reportready';
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'orderId': orderId,
-      'patientId': patientId,
       'sampleBarcode': sampleBarcode,
-      'testName': testName,
-      'branchName': branchName,
-      'pathologistName': pathologistName,
-      'verificationDate': verificationDate?.toIso8601String(),
-      'isReady': isReady,
+      'patientId': patientId,
+      'patientName': patientName,
       'status': status,
       'pdfUrl': pdfUrl,
-      'parameters': parameters.map((p) => p.toMap()).toList(),
-      'createdAt': createdAt.toIso8601String(),
+      'uploadedById': uploadedById,
+      'uploadedAt': uploadedAt != null ? Timestamp.fromDate(uploadedAt!) : null,
+      'verifiedAt': verifiedAt != null ? Timestamp.fromDate(verifiedAt!) : null,
+      'testResults': testResults.map((p) => p.toMap()).toList(),
+      if (testName.isNotEmpty) 'testName': testName,
+      if (branchName.isNotEmpty) 'branchName': branchName,
     };
   }
 
   factory ReportModel.fromMap(Map<String, dynamic> map, {String? documentId}) {
-    final rawParams = map['parameters'];
+    DateTime? parseDate(dynamic val) {
+      if (val == null) return null;
+      if (val is Timestamp) return val.toDate();
+      if (val is DateTime) return val;
+      if (val is String) return DateTime.tryParse(val);
+      return null;
+    }
+
+    final rawParams = map['testResults'] ?? map['parameters'];
     List<ReportParameter> paramList = [];
     if (rawParams is List) {
       paramList = rawParams
@@ -97,21 +126,17 @@ class ReportModel {
     return ReportModel(
       id: documentId ?? map['id']?.toString() ?? '',
       orderId: map['orderId']?.toString() ?? '',
-      patientId: map['patientId']?.toString() ?? '',
       sampleBarcode: map['sampleBarcode']?.toString() ?? '',
-      testName: map['testName']?.toString() ?? '',
-      branchName: map['branchName']?.toString() ?? 'Central Diagnostic Lab',
-      pathologistName: map['pathologistName']?.toString() ?? 'Pending Pathologist Review',
-      verificationDate: map['verificationDate'] != null
-          ? DateTime.tryParse(map['verificationDate'].toString())
-          : null,
-      isReady: map['isReady'] == true,
+      patientId: map['patientId']?.toString() ?? '',
+      patientName: map['patientName']?.toString() ?? '',
       status: map['status']?.toString() ?? 'Processing',
       pdfUrl: map['pdfUrl']?.toString(),
-      parameters: paramList,
-      createdAt: map['createdAt'] != null
-          ? DateTime.tryParse(map['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      uploadedById: map['uploadedById']?.toString() ?? map['pathologistName']?.toString(),
+      uploadedAt: parseDate(map['uploadedAt']) ?? parseDate(map['createdAt']),
+      verifiedAt: parseDate(map['verifiedAt']) ?? parseDate(map['verificationDate']),
+      testResults: paramList,
+      testName: map['testName']?.toString() ?? '',
+      branchName: map['branchName']?.toString() ?? 'Central Diagnostic Lab',
     );
   }
 }

@@ -11,6 +11,7 @@ class AuthProvider extends ChangeNotifier {
   String? _errorMessage;
   String? _verificationId;
   String? _pendingPhoneNumber;
+  UserRole _pendingRole = UserRole.patient;
 
   AuthProvider({AuthRepository? authRepository})
       : _authRepository = authRepository ?? AuthRepository();
@@ -51,30 +52,19 @@ class AuthProvider extends ChangeNotifier {
     return loginAsRole(UserRole.patient);
   }
 
-  /// Email & Password Sign In
-  Future<bool> loginWithEmail(String email, String password) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final user = await _authRepository.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      _currentUser = user;
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
-      notifyListeners();
-      return false;
-    }
+  Future<bool> signInWithGoogle({UserRole role = UserRole.patient}) async {
+    return _runAuth(() => _authRepository.signInWithGoogle(role: role));
   }
 
-  /// Email & Password Registration (Sign Up)
+  /// Alias for backward compatibility
+  Future<bool> loginWithGoogle() => signInWithGoogle();
+
+  /// Alias for backward compatibility
+  Future<bool> loginWithEmail(String email, String password, {UserRole role = UserRole.patient}) {
+    return loginWithCredentials(role: role, email: email, password: password);
+  }
+
+  /// Alias for backward compatibility
   Future<bool> signUp({
     required String name,
     required String email,
@@ -82,56 +72,22 @@ class AuthProvider extends ChangeNotifier {
     required UserRole role,
     String? phoneNumber,
     String? branchId,
-  }) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final user = await _authRepository.signUpWithEmailAndPassword(
-        name: name,
-        email: email,
-        password: password,
-        role: role,
-        phoneNumber: phoneNumber,
-        branchId: branchId,
-      );
-      _currentUser = user;
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
-      notifyListeners();
-      return false;
-    }
+  }) {
+    return signUpWithCredentials(
+      role: role,
+      name: name,
+      email: email,
+      password: password,
+      phoneNumber: phoneNumber,
+      assignedBranchId: branchId,
+    );
   }
 
-  /// Google Authentication Sign In
-  Future<bool> loginWithGoogle() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final user = await _authRepository.signInWithGoogle();
-      _currentUser = user;
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
-      notifyListeners();
-      return false;
-    }
-  }
-
-  Future<bool> sendOtp(String phoneNumber) async {
+  Future<bool> sendOtp(String phoneNumber, {UserRole role = UserRole.patient}) async {
     _isLoading = true;
     _errorMessage = null;
     _pendingPhoneNumber = phoneNumber;
+    _pendingRole = role;
     notifyListeners();
 
     bool success = false;
@@ -170,6 +126,7 @@ class AuthProvider extends ChangeNotifier {
         verificationId: _verificationId ?? 'demo-id',
         smsCode: smsCode,
         phoneNumber: _pendingPhoneNumber ?? '',
+        role: _pendingRole,
       );
       _currentUser = user;
       _isLoading = false;
@@ -180,6 +137,59 @@ class AuthProvider extends ChangeNotifier {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       notifyListeners();
       return false;
+    }
+
+  }
+
+  Future<bool> loginWithCredentials({
+    required UserRole role,
+    required String email,
+    required String password,
+  }) async {
+    return _runAuth(() => _authRepository.signInWithCredentials(
+          role: role,
+          email: email,
+          password: password,
+        ));
+  }
+
+  Future<bool> signUpWithCredentials({
+    required UserRole role,
+    required String name,
+    required String email,
+    required String password,
+    String? phoneNumber,
+    String? assignedBranchId,
+    int? age,
+    String? gender,
+    String? address,
+  }) async {
+    return _runAuth(() => _authRepository.signUpWithCredentials(
+          role: role,
+          name: name,
+          email: email,
+          password: password,
+          phoneNumber: phoneNumber,
+          assignedBranchId: assignedBranchId,
+          age: age,
+          gender: gender,
+          address: address,
+        ));
+  }
+
+  Future<bool> _runAuth(Future<UserModel> Function() action) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      _currentUser = await action();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -202,6 +212,7 @@ class AuthProvider extends ChangeNotifier {
     _currentUser = null;
     _verificationId = null;
     _pendingPhoneNumber = null;
+    _pendingRole = UserRole.patient;
     notifyListeners();
   }
 }

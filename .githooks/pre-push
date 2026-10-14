@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Git pre-push hook to run local CI verification before pushing
+echo "Running pre-push CI validation..."
+bash scripts/verify.sh

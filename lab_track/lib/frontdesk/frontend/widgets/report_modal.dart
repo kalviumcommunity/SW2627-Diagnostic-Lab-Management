@@ -359,7 +359,7 @@ class ReportModal extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                report.pathologistName,
+                                report.pathologistName ?? 'Authorized Pathologist',
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,

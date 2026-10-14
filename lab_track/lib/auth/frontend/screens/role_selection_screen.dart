@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../domain/enums/user_role.dart';
 import '../../../shared/theme/app_colors.dart';
-import '../providers/auth_provider.dart';
-import 'login_screen.dart';
+import 'role_auth_screen.dart';
 import 'signup_screen.dart';
 
 /// Startup screen presenting the 4 core diagnostic system personas:
@@ -21,23 +19,11 @@ class RoleSelectionScreen extends StatefulWidget {
 class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   UserRole? _loadingRole;
 
-  Future<void> _handleRoleSelect(UserRole role) async {
-    setState(() => _loadingRole = role);
-
-    final authProvider = context.read<AuthProvider>();
-    final success = await authProvider.loginAsRole(role);
-
-    if (!mounted) return;
-    setState(() => _loadingRole = null);
-
-    if (!success && authProvider.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.errorMessage!),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    }
+  void _handleRoleSelect(UserRole role) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => RoleAuthScreen(role: role)),
+    );
   }
 
   @override
@@ -121,7 +107,20 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   ),
                   const SizedBox(height: 14),
 
-                  // 4. Admin Card
+                  // 4. Lab Technician Card
+                  _buildRoleCard(
+                    role: UserRole.labTechnician,
+                    title: 'Laboratory Tech Portal',
+                    badge: 'Accessioning & Analyzers',
+                    personaName: 'Dr. Sarah Chen (#LAB-501)',
+                    description: 'Rack intake accessioning, specimen centrifugation, biochemistry analyzers, and QC verification.',
+                    icon: Icons.science_rounded,
+                    accentColor: const Color(0xFF7C3AED), // Bio-science Purple
+                    bgColor: const Color(0xFFF3E8FF),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 5. Admin Card
                   _buildRoleCard(
                     role: UserRole.admin,
                     title: 'Admin SLA Dashboard',
@@ -160,7 +159,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const RoleAuthScreen(role: UserRole.patient),
+                        ),
                       );
                     },
                     icon: const Icon(Icons.login_rounded, size: 20, color: AppColors.textPrimary),
@@ -235,7 +236,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.28),
+                color: AppColors.primary.withOpacity(0.28),
                 blurRadius: 18,
                 offset: const Offset(0, 6),
               ),
@@ -300,7 +301,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
+                color: Colors.black.withOpacity(0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
