@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../auth/frontend/providers/auth_provider.dart';
-import '../../../shared/theme/app_colors.dart';
+import '../../../shared/shared.dart';
 import '../providers/admin_provider.dart';
 import 'sla_dashboard_screen.dart';
 import 'branch_management_screen.dart';
@@ -118,39 +118,52 @@ class _AdminOverviewTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // User Header Card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+          // User Header Card
+          GodLevelCard(
+            padding: const EdgeInsets.all(18),
+            borderRadius: 20,
+            hasGlow: true,
+            glowColor: const Color(0xFF6366F1),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: const Color(0xFFEEF2FF),
-                  child: const Icon(Icons.admin_panel_settings_rounded, color: Color(0xFF6366F1), size: 30),
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.purpleIndigoGradient,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: AppColors.glowShadow(const Color(0xFF6366F1), opacity: 0.3),
+                  ),
+                  child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 28),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        user?.name ?? 'Dr. Vikram Malhotra',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      Row(
+                        children: [
+                          Text(
+                            user?.name ?? 'Dr. Vikram Malhotra',
+                            style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEEF2FF),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'EXECUTIVE HQ',
+                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF4F46E5), letterSpacing: 0.5),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Text(
-                        'Lab Operations Director • ${user?.assignedBranchId ?? "Apex HQ Operations"}',
+                        'Lab Operations Director • ${user?.assignedBranchId ?? "Apex HQ Operations"} • Real-Time SLA Monitor',
                         style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                       ),
                     ],
@@ -159,88 +172,89 @@ class _AdminOverviewTab extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: () => context.read<AuthProvider>().logout(),
                   icon: const Icon(Icons.swap_horiz_rounded, size: 16),
-                  label: const Text('Switch Role', style: TextStyle(fontSize: 12)),
+                  label: const Text('Switch Role', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    foregroundColor: const Color(0xFF4F46E5),
+                    side: const BorderSide(color: Color(0xFF4F46E5), width: 1.2),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
 
           // Operational KPI Cards Row 1
           Row(
             children: [
               Expanded(
-                child: _buildMetricCard(
+                child: TelemetryMetricCard(
                   title: 'Daily Volume',
                   value: '${kpis['totalDailyVolume'] ?? 1420}',
                   subtitle: 'Total samples',
+                  trendText: '+12.4%',
+                  isPositiveTrend: true,
                   icon: Icons.biotech_rounded,
-                  color: AppColors.primary,
-                  bgColor: AppColors.primaryLight,
+                  accentColor: AppColors.primary,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
-                child: _buildMetricCard(
+                child: TelemetryMetricCard(
                   title: 'SLA Compliance',
                   value: '${kpis['slaComplianceRate'] ?? 96.8}%',
                   subtitle: 'On-time reports',
+                  trendText: '+2.1%',
+                  isPositiveTrend: true,
                   icon: Icons.check_circle_rounded,
-                  color: AppColors.success,
-                  bgColor: AppColors.successLight,
+                  accentColor: AppColors.success,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
-                child: _buildMetricCard(
+                child: TelemetryMetricCard(
                   title: 'Avg TAT',
                   value: '${kpis['avgTatHours'] ?? 3.2}h',
                   subtitle: 'Turnaround time',
                   icon: Icons.timer_outlined,
-                  color: const Color(0xFF6366F1),
-                  bgColor: const Color(0xFFEEF2FF),
+                  accentColor: const Color(0xFF6366F1),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
           // Operational KPI Cards Row 2
           Row(
             children: [
               Expanded(
-                child: _buildMetricCard(
+                child: TelemetryMetricCard(
                   title: 'In Transit',
                   value: '${kpis['activeInTransit'] ?? 84}',
                   subtitle: 'Courier relays',
                   icon: Icons.local_shipping_outlined,
-                  color: const Color(0xFFD97706),
-                  bgColor: const Color(0xFFFEF3C7),
+                  accentColor: const Color(0xFFD97706),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
-                child: _buildMetricCard(
+                child: TelemetryMetricCard(
                   title: 'Active Fleet',
                   value: '${kpis['onDutyStaffCount'] ?? 5}',
                   subtitle: 'Staff on duty',
                   icon: Icons.badge_outlined,
-                  color: AppColors.accent,
-                  bgColor: AppColors.accentLight,
+                  accentColor: AppColors.accent,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
-                child: _buildMetricCard(
+                child: TelemetryMetricCard(
                   title: 'Escalations',
                   value: '${alerts.length}',
                   subtitle: 'Open alerts',
                   icon: Icons.warning_amber_rounded,
-                  color: alerts.isNotEmpty ? AppColors.error : AppColors.success,
-                  bgColor: alerts.isNotEmpty ? AppColors.errorLight : AppColors.successLight,
+                  accentColor: alerts.isNotEmpty ? AppColors.error : AppColors.success,
                 ),
               ),
             ],
