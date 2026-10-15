@@ -32,31 +32,37 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
         index: _currentIndex,
         children: _tabs,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard_rounded),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            activeIcon: Icon(Icons.add_circle_rounded),
-            label: 'Book Test',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_shipping_outlined),
-            activeIcon: Icon(Icons.local_shipping_rounded),
-            label: 'Track',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.description_outlined),
-            activeIcon: Icon(Icons.description_rounded),
-            label: 'Reports',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) => setState(() => _currentIndex = index),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard_outlined),
+              activeIcon: Icon(Icons.dashboard_rounded),
+              label: 'Overview',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.add_circle_outline),
+              activeIcon: Icon(Icons.add_circle_rounded),
+              label: 'Book Test',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.radar_outlined),
+              activeIcon: Icon(Icons.radar_rounded),
+              label: 'Live Track',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.description_outlined),
+              activeIcon: Icon(Icons.description_rounded),
+              label: 'My Reports',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -75,30 +81,58 @@ class _PatientDashboardTab extends StatelessWidget {
     final activeSample = patientProvider.activeSample;
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Row(
           children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: AppColors.primaryLight,
-              child: const Icon(Icons.person, color: AppColors.primary),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: AppColors.glowShadow(AppColors.primary, opacity: 0.25),
+              ),
+              child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
             ),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Welcome, $patientName',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      patientName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'VERIFIED PATIENT',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 Text(
-                  'Patient ID: #$patientId',
+                  'Patient Record: #$patientId',
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -107,32 +141,24 @@ class _PatientDashboardTab extends StatelessWidget {
           ],
         ),
         actions: [
-          IconButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('No new notifications')),
-              );
-            },
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications_none_rounded, size: 26),
-                Positioned(
-                  right: 2,
-                  top: 2,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppColors.error,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
+          // Switch portal button
+          TextButton.icon(
+            onPressed: () => context.read<AuthProvider>().logout(),
+            icon: const Icon(Icons.swap_horiz_rounded, size: 16, color: AppColors.primary),
+            label: const Text(
+              'Switch Portal',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary),
+            ),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              backgroundColor: AppColors.primaryLight,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           ),
+          const SizedBox(width: 8),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert_rounded),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             onSelected: (val) async {
               if (val == 'profile') {
                 Navigator.push(
@@ -150,7 +176,7 @@ class _PatientDashboardTab extends StatelessWidget {
                   children: [
                     Icon(Icons.swap_horiz_rounded, size: 18, color: AppColors.primary),
                     SizedBox(width: 8),
-                    Text('Switch Portal / Role'),
+                    Text('Switch Workspace'),
                   ],
                 ),
               ),
@@ -160,70 +186,132 @@ class _PatientDashboardTab extends StatelessWidget {
                   children: [
                     Icon(Icons.edit_outlined, size: 18),
                     SizedBox(width: 8),
-                    Text('Edit Medical Profile'),
+                    Text('Edit Health Profile'),
                   ],
                 ),
               ),
+              PopupMenuDivider(),
               PopupMenuItem(
                 value: 'logout',
                 child: Row(
                   children: [
                     Icon(Icons.logout_rounded, size: 18, color: AppColors.error),
                     SizedBox(width: 8),
-                    Text('Log Out', style: TextStyle(color: AppColors.error)),
+                    Text('Sign Out', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Home Booking CTA Banner
+            // God-Level Home Booking CTA Banner
             _buildActionBanner(context),
             const SizedBox(height: 24),
 
-            // Active Sample In-Transit (Real Problem Statement Solution)
+            // Active Sample In-Transit Live Radar
             if (activeSample != null) ...[
-              const Text(
-                'Active Sample Tracking',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          gradient: AppColors.amberOrangeGradient,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'LIVE SPECIMEN IN-TRANSIT',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.0,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const CoolChainBadge(compact: true),
+                ],
               ),
               const SizedBox(height: 12),
               _buildActiveSampleCard(context, activeSample),
               const SizedBox(height: 24),
             ],
 
-            // Quick Actions
-            const Text(
-              'Quick Actions',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+            // Quick Actions Hub
+            Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'QUICK SERVICES',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.0,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             _buildQuickActionsGrid(context),
             const SizedBox(height: 24),
 
-            // Recent Reports
+            // Recent Reports Section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Recent Test Reports',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        gradient: AppColors.accentGradient,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'RECENT DIAGNOSTIC REPORTS',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.0,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
-                TextButton(
+                TextButton.icon(
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const MyReportsScreen()),
                     );
                   },
-                  child: const Text('View All'),
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 14),
+                  label: const Text('View All', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                 ),
               ],
             ),
@@ -231,11 +319,8 @@ class _PatientDashboardTab extends StatelessWidget {
             ...patientProvider.reports.take(2).map((r) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _buildRecentReportCard(
-                    testName: r.testName,
-                    date: r.verificationDate != null ? 'Verified' : 'Processing',
-                    labBranch: r.branchName,
-                    status: r.status,
-                    isReady: r.isReady,
+                    context: context,
+                    report: r,
                   ),
                 )),
           ],
@@ -247,18 +332,14 @@ class _PatientDashboardTab extends StatelessWidget {
   Widget _buildActionBanner(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
+        gradient: AppColors.heroNavyGradient,
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.25),
-            blurRadius: 16,
+            color: const Color(0xFF0F172A).withOpacity(0.2),
+            blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
@@ -266,35 +347,72 @@ class _PatientDashboardTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.home_outlined, color: Colors.white, size: 16),
-                SizedBox(width: 6),
-                Text(
-                  'Home Collection Service',
-                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                decoration: BoxDecoration(
+                  color: AppColors.electricCyan.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.electricCyan.withOpacity(0.35)),
                 ),
-              ],
-            ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.bolt_rounded, color: AppColors.electricCyan, size: 14),
+                    SizedBox(width: 4),
+                    Text(
+                      '45-MIN DOORSTEP DISPATCH AVAILABLE',
+                      style: TextStyle(
+                        color: AppColors.electricCyan,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.ac_unit_rounded, color: Colors.white, size: 12),
+                    SizedBox(width: 4),
+                    Text(
+                      '2°C - 8°C Cool-Box Certified',
+                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           const Text(
-            'Book A Lab Test At Home',
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+            'Schedule Home Specimen Pickup',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 21,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
-            'Certified phlebotomist arrives with barcoded sterile vials & digital transit tracking.',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13, height: 1.4),
+            'A certified phlebotomist arrives with sterile barcoded vacuum vials, digital consent, and temperature-logged cold transport.',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.85),
+              fontSize: 13,
+              height: 1.45,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           ElevatedButton.icon(
             onPressed: () {
               Navigator.push(
@@ -302,13 +420,17 @@ class _PatientDashboardTab extends StatelessWidget {
                 MaterialPageRoute(builder: (context) => const BookCollectionScreen()),
               );
             },
-            icon: const Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.primary),
-            label: const Text('Schedule Home Visit'),
+            icon: const Icon(Icons.calendar_month_rounded, size: 16, color: AppColors.primary),
+            label: const Text(
+              'Book Collection Appointment',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: AppColors.primaryDark,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ],
@@ -317,124 +439,196 @@ class _PatientDashboardTab extends StatelessWidget {
   }
 
   Widget _buildActiveSampleCard(BuildContext context, dynamic sample) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: AppColors.warningLight, borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.biotech_rounded, color: AppColors.warning, size: 20),
-                    ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          sample.testNames.isNotEmpty ? sample.testNames.first : 'Diagnostic Panel',
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary),
-                        ),
-                        Text('Barcode: #${sample.barcode}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                      ],
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: AppColors.warningLight, borderRadius: BorderRadius.circular(12)),
-                  child: Text(
-                    sample.status.shortLabel,
-                    style: const TextStyle(color: AppColors.warning, fontSize: 12, fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const Divider(height: 1),
-            const SizedBox(height: 16),
-
-            // Stepper
-            Row(
-              children: [
-                _buildStep(label: 'Collected', isDone: true, isActive: false),
-                _buildConnector(isDone: true),
-                _buildStep(label: 'In Transit', isDone: false, isActive: true),
-                _buildConnector(isDone: false),
-                _buildStep(label: 'At Lab', isDone: false, isActive: false),
-                _buildConnector(isDone: false),
-                _buildStep(label: 'Testing', isDone: false, isActive: false),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(10)),
-              child: Row(
+    return GodLevelCard(
+      padding: const EdgeInsets.all(18),
+      borderColor: AppColors.warning.withOpacity(0.4),
+      hasGlow: true,
+      glowColor: AppColors.warning,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
                 children: [
-                  const Icon(Icons.info_outline, color: AppColors.primary, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      sample.notes ?? 'Sample in secure cold-chain transit.',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      gradient: AppColors.amberOrangeGradient,
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    child: const Icon(Icons.biotech_rounded, color: Colors.white, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        sample.testNames.isNotEmpty ? sample.testNames.first : 'Comprehensive Metabolic Panel',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: AppColors.background,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Text(
+                              'BARCODE #${sample.barcode}',
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textSecondary,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const CoolChainBadge(compact: true),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
+              PulsingStatusBadge.fromSampleStatus(sample.status),
+            ],
+          ),
+          const SizedBox(height: 18),
+
+          // High-Tech Horizontal Progress Stepper
+          Row(
+            children: [
+              _buildStepItem(label: 'Collected', isDone: true, isActive: false),
+              _buildStepConnector(isDone: true),
+              _buildStepItem(label: 'In Transit', isDone: false, isActive: true),
+              _buildStepConnector(isDone: false),
+              _buildStepItem(label: 'At Central Lab', isDone: false, isActive: false),
+              _buildStepConnector(isDone: false),
+              _buildStepItem(label: 'Testing & QC', isDone: false, isActive: false),
+            ],
+          ),
+          const SizedBox(height: 18),
+
+          // Contextual Info Footer
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFBEB),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.warning.withOpacity(0.3)),
             ),
-          ],
-        ),
+            child: Row(
+              children: [
+                const Icon(Icons.navigation_rounded, color: AppColors.warningDark, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    sample.notes ?? 'Vial in IoT cold-chain transit from Spoke-01 to Central Reference Hub.',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.warningDark,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TrackSampleScreen(initialBarcode: sample.barcode),
+                      ),
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text(
+                    'Track Live',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.warningDark,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildStep({required String label, required bool isDone, required bool isActive}) {
-    Color bg;
-    Color iconColor;
-    if (isDone) {
-      bg = AppColors.success;
-      iconColor = Colors.white;
-    } else if (isActive) {
-      bg = AppColors.warning;
-      iconColor = Colors.white;
-    } else {
-      bg = AppColors.border;
-      iconColor = AppColors.textTertiary;
-    }
+  Widget _buildStepItem({required String label, required bool isDone, required bool isActive}) {
+    Color bg = isDone ? AppColors.success : (isActive ? AppColors.warning : AppColors.borderLight);
+    Color fg = isDone || isActive ? Colors.white : AppColors.textTertiary;
 
     return Column(
       children: [
-        CircleAvatar(
-          radius: 12,
-          backgroundColor: bg,
-          child: Icon(isDone ? Icons.check : (isActive ? Icons.navigation : Icons.circle), color: iconColor, size: 14),
+        Container(
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(
+            color: bg,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isActive ? AppColors.warningDark : Colors.transparent,
+              width: 2,
+            ),
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: AppColors.warning.withOpacity(0.4),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Icon(
+              isDone ? Icons.check : (isActive ? Icons.navigation : Icons.circle),
+              color: fg,
+              size: 13,
+            ),
+          ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 5),
         Text(
           label,
           style: TextStyle(
             fontSize: 10,
-            fontWeight: isActive || isDone ? FontWeight.w600 : FontWeight.normal,
-            color: isActive ? AppColors.warning : (isDone ? AppColors.textPrimary : AppColors.textTertiary),
+            fontWeight: isActive || isDone ? FontWeight.w800 : FontWeight.w500,
+            color: isActive ? AppColors.warningDark : (isDone ? AppColors.textPrimary : AppColors.textTertiary),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildConnector({required bool isDone}) {
+  Widget _buildStepConnector({required bool isDone}) {
     return Expanded(
       child: Container(
-        height: 2,
-        color: isDone ? AppColors.success : AppColors.border,
+        height: 2.5,
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: isDone ? AppColors.success : AppColors.border,
+          borderRadius: BorderRadius.circular(2),
+        ),
       ),
     );
   }
@@ -444,10 +638,11 @@ class _PatientDashboardTab extends StatelessWidget {
       children: [
         Expanded(
           child: _buildActionTile(
-            title: 'Book Test',
-            subtitle: 'Home Pickup',
-            icon: Icons.home_repair_service_rounded,
+            title: 'Book Visit',
+            subtitle: 'Home Sample',
+            icon: Icons.calendar_today_rounded,
             color: AppColors.primary,
+            gradient: AppColors.primaryGradient,
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const BookCollectionScreen()));
             },
@@ -456,10 +651,11 @@ class _PatientDashboardTab extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _buildActionTile(
-            title: 'Track Sample',
-            subtitle: 'Live Status',
+            title: 'Live Radar',
+            subtitle: 'Vial Tracking',
             icon: Icons.qr_code_scanner_rounded,
             color: AppColors.accent,
+            gradient: AppColors.accentGradient,
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const TrackSampleScreen()));
             },
@@ -469,9 +665,10 @@ class _PatientDashboardTab extends StatelessWidget {
         Expanded(
           child: _buildActionTile(
             title: 'My Reports',
-            subtitle: 'Download PDF',
+            subtitle: 'PDF Vault',
             icon: Icons.picture_as_pdf_rounded,
             color: const Color(0xFF8B5CF6),
+            gradient: AppColors.purpleIndigoGradient,
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const MyReportsScreen()));
             },
@@ -486,69 +683,149 @@ class _PatientDashboardTab extends StatelessWidget {
     required String subtitle,
     required IconData icon,
     required Color color,
+    required LinearGradient gradient,
     required VoidCallback onTap,
   }) {
-    return InkWell(
+    return GodLevelCard(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, color: color, size: 22),
+      padding: const EdgeInsets.all(16),
+      borderRadius: 16,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              gradient: gradient,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.25),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-            const SizedBox(height: 2),
-            Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-          ],
-        ),
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildRecentReportCard({
-    required String testName,
-    required String date,
-    required String labBranch,
-    required String status,
-    required bool isReady,
+    required BuildContext context,
+    required ReportModel report,
   }) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: AppColors.successLight, borderRadius: BorderRadius.circular(12)),
-              child: const Icon(Icons.assignment_turned_in_rounded, color: AppColors.success, size: 24),
+    return GodLevelCard(
+      padding: const EdgeInsets.all(16),
+      borderRadius: 16,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const MyReportsScreen()),
+        );
+      },
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: report.isReady ? AppColors.successLight : AppColors.warningLight,
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(testName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                  const SizedBox(height: 2),
-                  Text(date, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                  const SizedBox(height: 2),
-                  Text(labBranch, style: const TextStyle(fontSize: 11, color: AppColors.textTertiary)),
-                ],
-              ),
+            child: Icon(
+              report.isReady ? Icons.verified_rounded : Icons.hourglass_top_rounded,
+              color: report.isReady ? AppColors.successDark : AppColors.warningDark,
+              size: 22,
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.textSecondary),
-          ],
-        ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  report.testName,
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Text(
+                      report.branchName,
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      width: 4,
+                      height: 4,
+                      decoration: const BoxDecoration(color: AppColors.textTertiary, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      report.isReady ? 'Verified & Signed' : 'In Analysis',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: report.isReady ? AppColors.successDark : AppColors.warningDark,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: report.isReady ? AppColors.primaryLight : AppColors.background,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  report.isReady ? Icons.download_rounded : Icons.visibility_rounded,
+                  size: 14,
+                  color: report.isReady ? AppColors.primary : AppColors.textSecondary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  report.isReady ? 'PDF' : 'Track',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: report.isReady ? AppColors.primary : AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

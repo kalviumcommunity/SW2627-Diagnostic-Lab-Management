@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../shared/shared.dart';
 import '../providers/patient_provider.dart';
 
+/// God-Level Chain of Custody & IoT Telemetry Tracking Screen
 class TrackSampleScreen extends StatefulWidget {
   final String? initialBarcode;
   const TrackSampleScreen({super.key, this.initialBarcode});
@@ -17,6 +17,12 @@ class _TrackSampleScreenState extends State<TrackSampleScreen> {
   SampleModel? _searchedSample;
   bool _isSearching = false;
 
+  final List<String> _demoBarcodes = [
+    'SMP-88390',
+    'SMP-99120',
+    'SMP-77401',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -29,9 +35,13 @@ class _TrackSampleScreenState extends State<TrackSampleScreen> {
     super.dispose();
   }
 
-  void _searchSample() async {
-    final query = _searchController.text.trim();
+  void _searchSample([String? overrideQuery]) async {
+    final query = (overrideQuery ?? _searchController.text).trim();
     if (query.isEmpty) return;
+
+    if (overrideQuery != null) {
+      _searchController.text = overrideQuery;
+    }
 
     setState(() => _isSearching = true);
     final patientProvider = context.read<PatientProvider>();
@@ -46,7 +56,7 @@ class _TrackSampleScreenState extends State<TrackSampleScreen> {
     if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('No sample found matching barcode "$query"'),
+          content: Text('No specimen found matching barcode "$query"'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -61,30 +71,42 @@ class _TrackSampleScreenState extends State<TrackSampleScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Chain of Custody Tracking'),
+        title: const Text('Live Chain of Custody Radar'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh Telemetry',
+            onPressed: () => _searchSample(),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Barcode search bar
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            // High-Tech Search Bar
+            GodLevelCard(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              borderRadius: 16,
               child: Row(
                 children: [
-                  const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary),
-                  const SizedBox(width: 10),
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary, size: 20),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: TextField(
                       controller: _searchController,
                       decoration: const InputDecoration(
-                        hintText: 'Enter Sample Barcode (e.g. SMP-88390)',
+                        hintText: 'Scan or Enter Barcode (e.g. SMP-88390)',
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
@@ -93,40 +115,152 @@ class _TrackSampleScreenState extends State<TrackSampleScreen> {
                       onSubmitted: (_) => _searchSample(),
                     ),
                   ),
-                  _isSearching
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : IconButton(
-                          icon: const Icon(Icons.search, color: AppColors.primary),
-                          onPressed: _searchSample,
-                        ),
+                  if (_isSearching)
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    ElevatedButton(
+                      onPressed: () => _searchSample(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Track', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                    ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+
+            // Demo Barcode Quick Selector Chips
+            Row(
+              children: [
+                const Text(
+                  'Quick Barcode Demo:',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: _demoBarcodes.map((code) {
+                        final isSelected = _searchController.text == code;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: InkWell(
+                            onTap: () => _searchSample(code),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppColors.primaryLight : Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isSelected ? AppColors.primary : AppColors.border,
+                                  width: isSelected ? 1.5 : 1.0,
+                                ),
+                              ),
+                              child: Text(
+                                code,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
 
             if (sample != null) ...[
+              // Specimen Overview Hero Card
               _buildOverviewCard(sample),
               const SizedBox(height: 24),
-              const Text(
-                'Digital Chain of Custody Audit Trail',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+
+              // Digital Audit Trail Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          gradient: AppColors.accentGradient,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'DIGITAL CHAIN OF CUSTODY',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.0,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.successLight,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'CRYPTOGRAPHIC AUDIT LOG',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.successDark,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               const Text(
-                'Cryptographically logged milestones from home pickup to Central Lab.',
+                'Tamper-evident custody milestones logged with GPS coordinates and cold-chain telemetry.',
                 style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
-              _buildTimeline(sample),
+
+              // Custody Stepper
+              SpecimenCustodyStepper(events: sample.events),
             ] else ...[
-              const Center(
+              Center(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Text('No active sample data available.'),
+                  padding: const EdgeInsets.symmetric(vertical: 48),
+                  child: Column(
+                    children: const [
+                      Icon(Icons.radar_rounded, size: 48, color: AppColors.textTertiary),
+                      SizedBox(height: 12),
+                      Text(
+                        'No specimen found for this barcode.',
+                        style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Select a demo barcode above or scan a sample slip.',
+                        style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -137,128 +271,178 @@ class _TrackSampleScreenState extends State<TrackSampleScreen> {
   }
 
   Widget _buildOverviewCard(SampleModel sample) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      sample.testNames.isNotEmpty ? sample.testNames.first : 'Diagnostic Panel',
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                    ),
-                    const SizedBox(height: 2),
-                    Text('Barcode: #${sample.barcode}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.warningLight,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    sample.status.displayName,
-                    style: const TextStyle(color: AppColors.warning, fontSize: 11, fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            const Divider(height: 1),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                const Icon(Icons.ac_unit_rounded, size: 16, color: AppColors.primary),
-                const SizedBox(width: 6),
-                Text(
-                  sample.temperatureStatus ?? '2°C - 8°C (Normal)',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                ),
-                const Spacer(),
-                const Icon(Icons.location_on_outlined, size: 16, color: AppColors.textSecondary),
-                const SizedBox(width: 4),
-                Text(
-                  sample.currentBranchName ?? 'In Transit',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimeline(SampleModel sample) {
-    if (sample.events.isEmpty) {
-      return const Text('No milestones logged yet.');
-    }
-
-    return Column(
-      children: sample.events.asMap().entries.map((entry) {
-        final index = entry.key;
-        final event = entry.value;
-        final isLast = index == sample.events.length - 1;
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              children: [
-                CircleAvatar(
-                  radius: 12,
-                  backgroundColor: isLast ? AppColors.warning : AppColors.success,
-                  child: Icon(
-                    isLast ? Icons.navigation : Icons.check,
-                    color: Colors.white,
-                    size: 13,
-                  ),
-                ),
-                if (!isLast)
-                  Container(
-                    width: 2,
-                    height: 50,
-                    color: AppColors.success,
-                  ),
-              ],
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 24),
+    return GodLevelCard(
+      padding: const EdgeInsets.all(20),
+      borderRadius: 20,
+      hasGlow: true,
+      glowColor: AppColors.primary,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      event.status.displayName,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${event.locationName} • ${DateFormat('hh:mm a').format(event.timestamp)}',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                    ),
-                    if (event.notes != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        event.notes!,
-                        style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+                      sample.testNames.isNotEmpty ? sample.testNames.first : 'Diagnostic Specimen Panel',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 17,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.3,
                       ),
-                    ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.background,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Text(
+                            'BARCODE: #${sample.barcode}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (sample.patientId != null)
+                          Text(
+                            'Patient: ${sample.patientId}',
+                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-            ),
-          ],
-        );
-      }).toList(),
+              PulsingStatusBadge.fromSampleStatus(sample.status),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 14),
+
+          // High-Tech Telemetry Row
+          Row(
+            children: [
+              // Cold Chain Telemetry
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: AppColors.electricCyanLight,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.ac_unit_rounded, color: AppColors.electricCyan, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'COOL-CHAIN',
+                            style: TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            sample.temperatureStatus ?? '4.2°C (Optimal)',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Current Location / Custody
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.hub_rounded, color: AppColors.primary, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'CURRENT LOCATION',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              sample.currentBranchName ?? 'In Transit Hub',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

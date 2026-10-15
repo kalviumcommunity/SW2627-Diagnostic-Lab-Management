@@ -166,31 +166,58 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
   // ==========================================
   Widget _buildHeaderCard(dynamic user) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.border),
+        boxShadow: AppColors.softCardShadow,
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: const Color(0xFFF3E8FF),
-            child: const Icon(Icons.biotech_rounded, color: Color(0xFF7C3AED), size: 28),
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              gradient: AppColors.purpleIndigoGradient,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: AppColors.glowShadow(const Color(0xFF7C3AED), opacity: 0.3),
+            ),
+            child: const Icon(Icons.biotech_rounded, color: Colors.white, size: 28),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  user?.name ?? 'Dr. Sarah Chen',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                Row(
+                  children: [
+                    Text(
+                      user?.name ?? 'Dr. Sarah Chen',
+                      style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3E8FF),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'NABL ACCREDITED',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF7C3AED),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 const Text(
-                  'Clinical Laboratory Specialist • Apex Central Reference Laboratory (NABL Accredited)',
+                  'Clinical Laboratory Specialist • Apex Central Reference Laboratory (NABL ISO 15189)',
                   style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
               ],
@@ -199,11 +226,11 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
           OutlinedButton.icon(
             onPressed: () => context.read<AuthProvider>().logout(),
             icon: const Icon(Icons.swap_horiz_rounded, size: 16),
-            label: const Text('Switch Role', style: TextStyle(fontSize: 12)),
+            label: const Text('Switch Role', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF7C3AED),
-              side: const BorderSide(color: Color(0xFF7C3AED)),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              side: const BorderSide(color: Color(0xFF7C3AED), width: 1.2),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           ),
@@ -237,26 +264,28 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
   Widget _buildKpiCard(String label, String value, IconData icon, Color color, Color bg) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border),
+          boxShadow: AppColors.softCardShadow,
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
               child: Icon(icon, color: color, size: 20),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-                  Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
+                  Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
+                  const SizedBox(height: 2),
+                  Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
@@ -271,24 +300,34 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
   // ==========================================
   Widget _buildQuickAccessionBar() {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF7C3AED).withOpacity(0.4)),
+        boxShadow: AppColors.glowShadow(const Color(0xFF7C3AED), opacity: 0.15),
       ),
       child: Row(
         children: [
-          const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF7C3AED), size: 24),
-          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3E8FF),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF7C3AED), size: 22),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: TextField(
               controller: _quickScanController,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
               decoration: const InputDecoration(
                 hintText: 'Rapid Accession: Scan or Type Vial Barcode (e.g. SMP-90214)',
                 hintStyle: TextStyle(fontSize: 13, color: AppColors.textTertiary),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
               ),
@@ -300,11 +339,13 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF7C3AED),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shadowColor: const Color(0xFF7C3AED).withOpacity(0.35),
+              elevation: 3,
             ),
             icon: const Icon(Icons.check_rounded, size: 16),
-            label: const Text('Accession Vial', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+            label: const Text('Accession Vial', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
           ),
         ],
       ),
