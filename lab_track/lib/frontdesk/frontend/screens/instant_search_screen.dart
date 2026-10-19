@@ -7,6 +7,7 @@ import '../../../shared/theme/app_colors.dart';
 import '../providers/frontdesk_provider.dart';
 import '../widgets/report_modal.dart';
 import '../widgets/custody_timeline_modal.dart';
+import '../../../shared/widgets/universal_qr_scanner_modal.dart';
 
 class InstantSearchScreen extends StatefulWidget {
   final String? initialQuery;
@@ -95,7 +96,21 @@ class _InstantSearchScreenState extends State<InstantSearchScreen> {
                                   _onQueryChanged('');
                                 },
                               )
-                            : null,
+                            : IconButton(
+                                icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary),
+                                tooltip: 'Scan Barcode or Patient QR',
+                                onPressed: () async {
+                                  final code = await UniversalQrScannerModal.show(
+                                    context,
+                                    title: 'Scan Patient QR / Sample Barcode',
+                                    hint: 'Scan receipt QR or tube barcode to instant-lookup patient file',
+                                  );
+                                  if (code != null && code.isNotEmpty) {
+                                    _searchController.text = code;
+                                    _onQueryChanged(code);
+                                  }
+                                },
+                              ),
                         filled: true,
                         fillColor: AppColors.background,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

@@ -11,6 +11,7 @@ import '../widgets/pathologist_sign_dialog.dart';
 import '../widgets/qc_rejection_dialog.dart';
 import '../widgets/rack_detail_modal.dart';
 import '../widgets/result_entry_dialog.dart';
+import '../../../shared/widgets/universal_qr_scanner_modal.dart';
 
 /// Clinical Laboratory & Pathologist Station Portal
 /// Features courier accessioning, visual analyzer racks, pre-analytical QC,
@@ -304,18 +305,35 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF7C3AED).withOpacity(0.4)),
+        border: Border.all(color: const Color(0xFF7C3AED).withValues(alpha: 0.4)),
         boxShadow: AppColors.glowShadow(const Color(0xFF7C3AED), opacity: 0.15),
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3E8FF),
+          Tooltip(
+            message: 'Scan Barcode with Camera',
+            child: InkWell(
+              onTap: () async {
+                final code = await UniversalQrScannerModal.show(
+                  context,
+                  title: 'Rapid Accession Scanner',
+                  hint: 'Scan incoming vial barcode to accession into lab workflow',
+                );
+                if (code != null && code.isNotEmpty) {
+                  _quickScanController.text = code;
+                  _handleQuickAccession();
+                }
+              },
               borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3E8FF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF7C3AED), size: 22),
+              ),
             ),
-            child: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF7C3AED), size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(

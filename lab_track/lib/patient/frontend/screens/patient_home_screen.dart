@@ -141,6 +141,25 @@ class _PatientDashboardTab extends StatelessWidget {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary),
+            tooltip: 'Scan Receipt / Sample Barcode',
+            onPressed: () async {
+              final scanned = await UniversalQrScannerModal.show(
+                context,
+                title: 'Scan Receipt or Sample Barcode',
+                hint: 'Scan receipt QR or test vial barcode to track live custody',
+              );
+              if (scanned != null && scanned.isNotEmpty) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TrackSampleScreen(initialBarcode: scanned),
+                  ),
+                );
+              }
+            },
+          ),
           // Switch portal button
           TextButton.icon(
             onPressed: () => context.read<AuthProvider>().logout(),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/universal_qr_scanner_modal.dart';
 
 class TrackSampleScreen extends StatefulWidget {
   final String? initialBarcode;
@@ -38,6 +39,23 @@ class _TrackSampleScreenState extends State<TrackSampleScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chain of Custody Tracking'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner_rounded),
+            tooltip: 'Scan Barcode / QR',
+            onPressed: () async {
+              final scanned = await UniversalQrScannerModal.show(
+                context,
+                title: 'Scan Sample Barcode',
+                hint: 'Scan sample barcode or receipt QR code',
+              );
+              if (scanned != null && scanned.isNotEmpty) {
+                _searchController.text = scanned;
+                _searchSample();
+              }
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -54,8 +72,22 @@ class _TrackSampleScreenState extends State<TrackSampleScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
               child: Row(
                 children: [
-                  const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary),
-                  const SizedBox(width: 10),
+                  IconButton(
+                    icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary),
+                    tooltip: 'Scan Barcode',
+                    onPressed: () async {
+                      final scanned = await UniversalQrScannerModal.show(
+                        context,
+                        title: 'Scan Sample Barcode',
+                        hint: 'Scan sample barcode or receipt QR code',
+                      );
+                      if (scanned != null && scanned.isNotEmpty) {
+                        _searchController.text = scanned;
+                        _searchSample();
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 4),
                   Expanded(
                     child: TextField(
                       controller: _searchController,

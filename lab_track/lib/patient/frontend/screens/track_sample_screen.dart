@@ -74,6 +74,21 @@ class _TrackSampleScreenState extends State<TrackSampleScreen> {
         title: const Text('Live Chain of Custody Radar'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.qr_code_scanner_rounded),
+            tooltip: 'Scan Barcode / QR',
+            onPressed: () async {
+              final scanned = await UniversalQrScannerModal.show(
+                context,
+                title: 'Scan Receipt / Sample Barcode',
+                hint: 'Scan your booking receipt QR or vial barcode to track live custody',
+              );
+              if (scanned != null && scanned.isNotEmpty) {
+                _searchController.text = scanned;
+                _searchSample();
+              }
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Refresh Telemetry',
             onPressed: () => _searchSample(),
@@ -92,14 +107,28 @@ class _TrackSampleScreenState extends State<TrackSampleScreen> {
               borderRadius: 16,
               child: Row(
                 children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(10),
+                  InkWell(
+                    onTap: () async {
+                      final scanned = await UniversalQrScannerModal.show(
+                        context,
+                        title: 'Scan Receipt / Sample Barcode',
+                        hint: 'Scan your booking receipt QR or vial barcode to track live custody',
+                      );
+                      if (scanned != null && scanned.isNotEmpty) {
+                        _searchController.text = scanned;
+                        _searchSample();
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary, size: 20),
                     ),
-                    child: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
