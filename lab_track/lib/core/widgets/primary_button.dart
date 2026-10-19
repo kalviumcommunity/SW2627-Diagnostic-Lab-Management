@@ -24,15 +24,17 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveColor = color ?? AppColors.primary;
+
     return SizedBox(
       height: height,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: color ?? AppColors.primary,
+          backgroundColor: effectiveColor,
           foregroundColor: Colors.white,
           elevation: 2,
-          shadowColor: (color ?? AppColors.primary).withOpacity(0.35),
+          shadowColor: effectiveColor.withValues(alpha: 0.35),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),

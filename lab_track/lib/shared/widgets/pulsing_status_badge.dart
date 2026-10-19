@@ -127,7 +127,7 @@ class _PulsingStatusBadgeState extends State<PulsingStatusBadge> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    final bg = widget.backgroundColor ?? widget.color.withOpacity(0.12);
+    final bg = widget.backgroundColor ?? widget.color.withValues(alpha: 0.12);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
@@ -135,7 +135,7 @@ class _PulsingStatusBadgeState extends State<PulsingStatusBadge> with SingleTick
         color: bg,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: widget.color.withOpacity(0.35),
+          color: widget.color.withValues(alpha: 0.35),
           width: 1.0,
         ),
       ),
@@ -150,11 +150,11 @@ class _PulsingStatusBadgeState extends State<PulsingStatusBadge> with SingleTick
                   width: 7,
                   height: 7,
                   decoration: BoxDecoration(
-                    color: widget.color.withOpacity(_glowAnimation.value),
+                    color: widget.color.withValues(alpha: _glowAnimation.value),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: widget.color.withOpacity(_glowAnimation.value * 0.7),
+                        color: widget.color.withValues(alpha: _glowAnimation.value * 0.7),
                         blurRadius: 5,
                         spreadRadius: 1,
                       ),

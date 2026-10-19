@@ -6,20 +6,29 @@ import '../models/sample_model.dart';
 import '../models/sample_event_model.dart';
 
 class SampleRepository {
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _firestore;
 
   SampleRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+      : _firestore = firestore ?? _tryGetFirestore();
+
+  static FirebaseFirestore? _tryGetFirestore() {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   Stream<List<SampleModel>> watchSamplesByStatus(
     List<SampleStatus> statuses, {
     String? branchId,
   }) {
-    if (statuses.isEmpty) {
+    final firestore = _firestore;
+    if (statuses.isEmpty || firestore == null) {
       return Stream.value(<SampleModel>[]);
     }
 
-    Query<Map<String, dynamic>> query = _firestore.collection('samples');
+    Query<Map<String, dynamic>> query = firestore.collection('samples');
 
     if (statuses.length == 1) {
       query = query.where('status', isEqualTo: statuses.first.name);
@@ -48,7 +57,12 @@ class SampleRepository {
   }
 
   Stream<SampleModel?> watchSample(String barcode) {
-    return _firestore
+    final firestore = _firestore;
+    if (firestore == null) {
+      return Stream.value(null);
+    }
+
+    return firestore
         .collection('samples')
         .doc(barcode)
         .snapshots()
@@ -59,7 +73,12 @@ class SampleRepository {
   }
 
   Stream<List<SampleEventModel>> watchEvents(String barcode) {
-    return _firestore
+    final firestore = _firestore;
+    if (firestore == null) {
+      return Stream.value(<SampleEventModel>[]);
+    }
+
+    return firestore
         .collection('sample_events')
         .where('sampleBarcode', isEqualTo: barcode)
         .snapshots()
@@ -73,13 +92,19 @@ class SampleRepository {
   }
 
   Future<SampleModel?> getSample(String barcode) async {
-    final snapshot = await _firestore.collection('samples').doc(barcode).get();
+    final firestore = _firestore;
+    if (firestore == null) return null;
+
+    final snapshot = await firestore.collection('samples').doc(barcode).get();
     if (!snapshot.exists || snapshot.data() == null) return null;
     return SampleModel.fromMap(snapshot.data()!, documentId: snapshot.id);
   }
 
   Future<void> createSample(SampleModel sample) async {
-    await _firestore
+    final firestore = _firestore;
+    if (firestore == null) return;
+
+    await firestore
         .collection('samples')
         .doc(sample.barcode)
         .set(sample.toMap());
@@ -95,10 +120,13 @@ class SampleRepository {
     double? temperatureC,
     String? note,
   }) async {
-    final sampleRef = _firestore.collection('samples').doc(barcode);
-    final eventRef = _firestore.collection('sample_events').doc();
+    final firestore = _firestore;
+    if (firestore == null) return;
 
-    await _firestore.runTransaction((transaction) async {
+    final sampleRef = firestore.collection('samples').doc(barcode);
+    final eventRef = firestore.collection('sample_events').doc();
+
+    await firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(sampleRef);
       if (!snapshot.exists || snapshot.data() == null) {
         throw Exception('Sample with barcode "$barcode" does not exist in Firestore.');

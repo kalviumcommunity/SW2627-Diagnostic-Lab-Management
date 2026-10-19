@@ -52,8 +52,9 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     // Verify key UI elements render
-    expect(find.text('Welcome, John Doe'), findsOneWidget);
-    expect(find.text('Active Sample Tracking'), findsOneWidget);
-    expect(find.text('Quick Actions'), findsOneWidget);
+    expect(find.text('John Doe'), findsWidgets);
+    expect(find.text('VERIFIED PATIENT'), findsOneWidget);
+    expect(find.text('LIVE SPECIMEN IN-TRANSIT'), findsOneWidget);
+    expect(find.text('QUICK SERVICES'), findsOneWidget);
   });
 }
