@@ -100,20 +100,20 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       // Verify header title
-      expect(find.text('Front Desk Reception Portal'), findsOneWidget);
+      expect(find.text('Branch Reception Command'), findsOneWidget);
 
       // Verify user card
       expect(find.text('Priya Sharma'), findsOneWidget);
-      expect(find.textContaining('branch-spoke-01'), findsOneWidget);
-      expect(find.text('Switch Role'), findsOneWidget);
+      expect(find.textContaining('Spoke Hub #01'), findsOneWidget);
+      expect(find.text('Switch Portal'), findsOneWidget);
 
-      // Verify Action Card 1: Instant Report & Patient Search
-      expect(find.text('Instant Report & Patient Search'), findsOneWidget);
-      expect(find.text('Search by patient name, phone, or barcode to eliminate manual paper slips'), findsOneWidget);
+      // Verify Action Card 1: Instant Report & Patient Lookup
+      expect(find.text('Instant Report & Patient Lookup'), findsOneWidget);
+      expect(find.textContaining('Search by patient name, phone number, or specimen barcode'), findsOneWidget);
 
       // Verify Action Card 2: Thermal Barcode & Label Dispatch
       expect(find.text('Thermal Barcode & Label Dispatch'), findsOneWidget);
-      expect(find.text('Generate sterile barcode stickers for walk-in patient test requisitions'), findsOneWidget);
+      expect(find.textContaining('Generate sterile barcode stickers for walk-in patient test requisitions'), findsOneWidget);
     });
 
     testWidgets('Tapping Instant Search navigates to InstantSearchScreen', (WidgetTester tester) async {
@@ -137,7 +137,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      await tester.tap(find.text('Instant Report & Patient Search'));
+      await tester.tap(find.text('Instant Report & Patient Lookup'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 

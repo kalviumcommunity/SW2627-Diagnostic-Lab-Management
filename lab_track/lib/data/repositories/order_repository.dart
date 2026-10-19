@@ -5,13 +5,25 @@ import '../models/sample_model.dart';
 import '../models/report_model.dart';
 
 class OrderRepository {
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _firestore;
 
   OrderRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+      : _firestore = firestore ?? _tryGetFirestore();
+
+  static FirebaseFirestore? _tryGetFirestore() {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   Stream<List<OrderModel>> watchOrdersForPatient(String patientId) {
-    return _firestore
+    final firestore = _firestore;
+    if (firestore == null) {
+      return Stream.value(<OrderModel>[]);
+    }
+    return firestore
         .collection('orders')
         .where('patientId', isEqualTo: patientId)
         .snapshots()
@@ -25,7 +37,11 @@ class OrderRepository {
   }
 
   Stream<List<OrderModel>> watchPickupsForPhlebotomist(String phlebotomistId) {
-    return _firestore.collection('orders').snapshots().map((snapshot) {
+    final firestore = _firestore;
+    if (firestore == null) {
+      return Stream.value(<OrderModel>[]);
+    }
+    return firestore.collection('orders').snapshots().map((snapshot) {
       final list = snapshot.docs
           .map((doc) => OrderModel.fromMap(doc.data(), documentId: doc.id))
           .where((order) =>
@@ -43,15 +59,20 @@ class OrderRepository {
         ? order.id
         : 'ORD-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
 
+    final firestore = _firestore;
+    if (firestore == null) {
+      return orderId;
+    }
+
     final finalOrder = order.copyWith(id: orderId);
-    await _firestore
+    await firestore
         .collection('orders')
         .doc(orderId)
         .set(finalOrder.toMap());
 
     // Register initial sample documents if barcodes are present
     for (final barcode in finalOrder.sampleBarcodes) {
-      final sampleRef = _firestore.collection('samples').doc(barcode);
+      final sampleRef = firestore.collection('samples').doc(barcode);
       final snap = await sampleRef.get();
       if (!snap.exists) {
         final sample = SampleModel(
@@ -76,9 +97,12 @@ class OrderRepository {
   }
 
   Future<List<SampleModel>> searchSamples(String query) async {
+    final firestore = _firestore;
+    if (firestore == null) return [];
+
     final clean = query.trim().toLowerCase();
     if (clean.isEmpty) {
-      final snap = await _firestore.collection('samples').limit(30).get();
+      final snap = await firestore.collection('samples').limit(30).get();
       final list = snap.docs
           .map((doc) => SampleModel.fromMap(doc.data(), documentId: doc.id))
           .toList();
@@ -87,7 +111,7 @@ class OrderRepository {
       return list;
     }
 
-    final snap = await _firestore
+    final snap = await firestore
         .collection('samples')
         .where('searchKeywords', arrayContains: clean)
         .limit(30)
@@ -102,20 +126,31 @@ class OrderRepository {
   }
 
   Future<OrderModel?> getOrder(String orderId) async {
-    final snap = await _firestore.collection('orders').doc(orderId).get();
+    final firestore = _firestore;
+    if (firestore == null) return null;
+
+    final snap = await firestore.collection('orders').doc(orderId).get();
     if (!snap.exists || snap.data() == null) return null;
     return OrderModel.fromMap(snap.data()!, documentId: snap.id);
   }
 
   Future<void> updateOrder(OrderModel order) async {
-    await _firestore.collection('orders').doc(order.id).set(
+    final firestore = _firestore;
+    if (firestore == null) return;
+
+    await firestore.collection('orders').doc(order.id).set(
           order.toMap(),
           SetOptions(merge: true),
         );
   }
 
   Stream<List<ReportModel>> watchReportsForPatient(String patientId) {
-    return _firestore
+    final firestore = _firestore;
+    if (firestore == null) {
+      return Stream.value(<ReportModel>[]);
+    }
+
+    return firestore
         .collection('reports')
         .where('patientId', isEqualTo: patientId)
         .snapshots()
@@ -129,7 +164,10 @@ class OrderRepository {
   }
 
   Future<ReportModel?> getReportByOrderId(String orderId) async {
-    final snap = await _firestore
+    final firestore = _firestore;
+    if (firestore == null) return null;
+
+    final snap = await firestore
         .collection('reports')
         .where('orderId', isEqualTo: orderId)
         .limit(1)
