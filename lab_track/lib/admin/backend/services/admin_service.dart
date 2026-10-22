@@ -1,6 +1,7 @@
 import '../../../data/models/branch_model.dart';
 import '../../../domain/enums/user_role.dart';
 import '../models/sla_metric_model.dart';
+import '../../../data/mock/seed_users.dart';
 
 /// Admin Backend API Service
 /// Provides operational metrics, SLA/TAT calculations, multi-branch topology,
@@ -240,6 +241,31 @@ class AdminService {
         avgRating: 4.85,
       ),
     ]);
+
+    // Populate remaining staff from kSeedUsers
+    final existingStaffIds = _staffStore.map((s) => s.id).toSet();
+    const branchNameMap = {
+      'branch-apex-hq': 'Apex Central Reference Laboratory',
+      'branch-spoke-01': 'Downtown Spoke Center #1',
+      'BR-004': 'Central Diagnostic Hub 4',
+      'branch-noida-02': 'Noida Sector 18 Express',
+      'branch-southdelhi-03': 'South Extension Specialized Pathology',
+      'branch-north-hub': 'North Delhi Processing Hub',
+    };
+    for (final u in kSeedUsers) {
+      if (!u.isPatient && !existingStaffIds.contains(u.id)) {
+        _staffStore.add(
+          userToStaffAllocation(
+            u,
+            assignedBranchName: branchNameMap[u.assignedBranchId] ?? 'Central Lab Hub',
+            isOnDuty: true,
+            todayCompletedTasks: 4 + (u.id.hashCode.abs() % 15),
+            pendingTasks: 1 + (u.id.hashCode.abs() % 5),
+            avgRating: 4.8 + ((u.id.hashCode.abs() % 20) / 100.0),
+          ),
+        );
+      }
+    }
 
     // 5. Seed Real-time Operational Alerts
     _alerts.addAll([

@@ -9,6 +9,7 @@ import '../lib/data/models/order_model.dart';
 import '../lib/data/models/sample_model.dart';
 import '../lib/data/models/sample_event_model.dart';
 import '../lib/data/models/report_model.dart';
+import '../lib/data/mock/seed_users.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +25,14 @@ void main() async {
 
   final firestore = FirebaseFirestore.instance;
   final now = DateTime.now();
+
+  // 0. Seed Users (100 Users across Patient, Phlebotomist, Lab Tech, Front Desk, Admin)
+  debugPrint('--- Seeding ${kSeedUsers.length} Users into /users collection ---');
+  for (final user in kSeedUsers) {
+    await firestore.collection('users').doc(user.id).set(user.toMap(), SetOptions(merge: true));
+    debugPrint('Seeded User [${user.role.name}]: ${user.id} (${user.name})');
+  }
+  debugPrint('Successfully seeded ${kSeedUsers.length} users into /users.');
 
   // 1. Seed Orders
   final orders = [

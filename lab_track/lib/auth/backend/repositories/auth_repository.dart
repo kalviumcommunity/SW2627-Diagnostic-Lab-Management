@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../../../domain/enums/user_role.dart';
 import '../../../data/models/user_model.dart';
+import '../../../data/mock/seed_users.dart';
 
 class AuthRepository {
   final FirebaseAuth? _firebaseAuth;
@@ -225,6 +226,14 @@ class AuthRepository {
 
     // Demo / offline fallback
     await Future.delayed(const Duration(milliseconds: 350));
+    final seedMatch = kSeedUsersByEmail[email.trim().toLowerCase()] ??
+        kSeedUsersById[email.trim()] ??
+        kSeedUsersByPhone[email.replaceAll(RegExp(r'[^0-9]'), '')];
+    if (seedMatch != null) {
+      _cachedUser = seedMatch;
+      return seedMatch;
+    }
+
     final user = (await signInAsRole(role)).copyWith(
       email: email.trim(),
     );
@@ -340,6 +349,15 @@ class AuthRepository {
     final cleanEmail = email.trim().toLowerCase();
 
     // Fast-track demo credentials for instant reliable login in all environments
+    final seedMatch = kSeedUsersByEmail[cleanEmail] ??
+        kSeedUsersById[cleanEmail] ??
+        kSeedUsersByPhone[cleanEmail.replaceAll(RegExp(r'[^0-9]'), '')];
+    if (seedMatch != null) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      _cachedUser = seedMatch;
+      return seedMatch;
+    }
+
     if (cleanEmail == 'dr.malhotra@labtrack.com' || cleanEmail == 'admin@labtrack.com') {
       await Future.delayed(const Duration(milliseconds: 300));
       _cachedUser = defaultDemoAdmin;
@@ -542,6 +560,12 @@ class AuthRepository {
   }) async {
     if (verificationId.startsWith('demo-') || smsCode == '123456') {
       await Future.delayed(const Duration(milliseconds: 500));
+      final normPhone = phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+      final seedPhoneMatch = kSeedUsersByPhone[normPhone];
+      if (seedPhoneMatch != null) {
+        _cachedUser = seedPhoneMatch;
+        return seedPhoneMatch;
+      }
       final user = _demoUserForRole(role).copyWith(
         phoneNumber: phoneNumber.isNotEmpty ? phoneNumber : defaultDemoPatient.phoneNumber,
       );
