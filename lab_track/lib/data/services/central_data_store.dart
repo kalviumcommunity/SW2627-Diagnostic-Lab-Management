@@ -11,6 +11,8 @@ import '../../domain/enums/user_role.dart';
 import '../../lab/backend/models/analyzer_equipment_model.dart';
 import '../../lab/backend/models/lab_rack_model.dart';
 import '../../lab/backend/models/qc_inspection_model.dart';
+import '../../data/models/user_model.dart';
+import '../../data/mock/seed_users.dart';
 
 /// Central Unified Diagnostic Lab Data Store
 /// Serves as the single source of truth across all 5 user roles:
@@ -27,6 +29,7 @@ class CentralDataStore extends ChangeNotifier {
   final List<QcInspectionModel> _qcRejections = [];
   final List<BranchModel> _branches = [];
   final List<StaffAllocationModel> _staff = [];
+  final List<UserModel> _users = [];
 
   bool _initialized = false;
 
@@ -45,6 +48,8 @@ class CentralDataStore extends ChangeNotifier {
   List<QcInspectionModel> get qcRejections => List.unmodifiable(_qcRejections);
   List<BranchModel> get branches => List.unmodifiable(_branches);
   List<StaffAllocationModel> get staff => List.unmodifiable(_staff);
+  List<UserModel> get users => List.unmodifiable(_users);
+  List<UserModel> get patients => _users.where((u) => u.isPatient).toList();
 
   void _ensureInitialized() {
     if (_initialized) return;
@@ -151,6 +156,34 @@ class CentralDataStore extends ChangeNotifier {
         avgRating: 4.98,
       ),
     ]);
+
+    // Seed 100 diagnostic users dataset
+    _users.addAll(kSeedUsers);
+
+    // Seed remaining staff fleet from kSeedUsers
+    final existingStaffIds = _staff.map((s) => s.id).toSet();
+    const branchNameMap = {
+      'branch-apex-hq': 'Apex Central Reference Laboratory',
+      'branch-spoke-01': 'Downtown Spoke Center #1',
+      'BR-004': 'Central Diagnostic Hub 4',
+      'branch-noida-02': 'Noida Sector 18 Express Collection Center',
+      'branch-southdelhi-03': 'South Extension Specialized Pathology',
+      'branch-north-hub': 'North Delhi Processing Hub',
+    };
+    for (final u in kSeedUsers) {
+      if (!u.isPatient && !existingStaffIds.contains(u.id)) {
+        _staff.add(
+          userToStaffAllocation(
+            u,
+            assignedBranchName: branchNameMap[u.assignedBranchId] ?? 'Central Lab Hub',
+            isOnDuty: true,
+            todayCompletedTasks: 4 + (u.id.hashCode.abs() % 15),
+            pendingTasks: 1 + (u.id.hashCode.abs() % 5),
+            avgRating: 4.8 + ((u.id.hashCode.abs() % 20) / 100.0),
+          ),
+        );
+      }
+    }
 
     // 3. Seed Diagnostic Orders
     final order1 = OrderModel(
