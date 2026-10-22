@@ -33,6 +33,7 @@ jobs:
       - name: 🧹 Clean Environment & Resolve Dependencies
         run: |
           rm -f android/local.properties
+          flutter clean
           flutter pub get
 
       - name: 🔨 Build Release APK
