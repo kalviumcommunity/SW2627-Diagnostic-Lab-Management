@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 /// Centralized service for validating, extracting, and processing
 /// clinical barcode and 2D QR code strings across all roles.
 class ScannerService {

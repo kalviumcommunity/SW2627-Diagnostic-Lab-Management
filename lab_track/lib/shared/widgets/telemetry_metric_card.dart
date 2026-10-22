@@ -41,7 +41,7 @@ class TelemetryMetricCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  title.toUpperCase(),
+                  title,
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,

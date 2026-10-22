@@ -346,11 +346,10 @@ class _TrackSampleScreenState extends State<TrackSampleScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        if (sample.patientId != null)
-                          Text(
-                            'Patient: ${sample.patientId}',
-                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                          ),
+                        Text(
+                          'Patient: ${sample.patientId}',
+                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
                       ],
                     ),
                   ],

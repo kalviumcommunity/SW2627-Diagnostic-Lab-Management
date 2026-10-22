@@ -434,7 +434,22 @@ class CentralDataStore extends ChangeNotifier {
       ),
     ]);
 
-    // 6. Seed Analyzer Racks
+    // 6. Seed Quality Control Rejection Log
+    _qcRejections.add(
+      QcInspectionModel(
+        id: 'QC-88390',
+        sampleBarcode: 'SMP-88390',
+        patientName: 'John Doe',
+        testName: 'Complete Blood Count (CBC) with Differential',
+        rejectionReason: 'Hemolyzed Specimen (Free Hb > 500mg/dL)',
+        technicianId: 'LAB-501',
+        technicianName: 'Dr. Sarah Chen (#LAB-501)',
+        rejectedAt: now.subtract(const Duration(hours: 1)),
+        clinicalNotes: 'Specimen rejected during pre-analytical inspection.',
+      ),
+    );
+
+    // 7. Seed Analyzer Racks
     _racks.addAll([
       LabRackModel(
         id: 'RACK-HEM-01',
@@ -458,7 +473,7 @@ class CentralDataStore extends ChangeNotifier {
       ),
     ]);
 
-    // 7. Seed Connected Analyzers
+    // 8. Seed Connected Analyzers
     _analyzers.addAll([
       AnalyzerEquipmentModel(
         id: 'EQ-SYS-01',
@@ -481,6 +496,28 @@ class CentralDataStore extends ChangeNotifier {
         temperatureC: 22.0,
         lastCalibrationTime: now.subtract(const Duration(hours: 12)),
         reagentLevel: 'Adequate (76%)',
+      ),
+      AnalyzerEquipmentModel(
+        id: 'EQ-IMMUNO-03',
+        name: 'Abbott Architect i2000SR Immunoassay',
+        modelNumber: 'Architect-i2000SR',
+        department: 'Immunology',
+        status: 'Online & Calibrated',
+        samplesProcessedToday: 96,
+        temperatureC: 22.1,
+        lastCalibrationTime: now.subtract(const Duration(hours: 9)),
+        reagentLevel: 'Optimal (88%)',
+      ),
+      AnalyzerEquipmentModel(
+        id: 'EQ-COAG-04',
+        name: 'Stago STA Compact Max Coagulation',
+        modelNumber: 'STA-Compact-Max',
+        department: 'Coagulation',
+        status: 'Standby - Ready',
+        samplesProcessedToday: 74,
+        temperatureC: 21.8,
+        lastCalibrationTime: now.subtract(const Duration(hours: 4)),
+        reagentLevel: 'Adequate (71%)',
       ),
     ]);
   }
@@ -739,12 +776,26 @@ class CentralDataStore extends ChangeNotifier {
   }) {
     final now = DateTime.now();
     final sIdx = _samples.indexWhere((s) => s.barcode.toUpperCase() == sampleBarcode.toUpperCase());
-    final sample = sIdx != -1 ? _samples[sIdx] : null;
+    var sample = sIdx != -1 ? _samples[sIdx] : null;
+    if (sample == null) {
+      sample = SampleModel(
+        barcode: sampleBarcode.toUpperCase(),
+        orderId: 'ORD-LAB-${now.millisecondsSinceEpoch}',
+        patientId: 'PT-UNKNOWN',
+        patientName: 'Patient',
+        currentBranchId: 'branch-apex-hq',
+        currentBranchName: 'Apex Central Reference Laboratory',
+        status: SampleStatus.receivedAtLab,
+        testNames: testName == null ? const [] : [testName],
+        createdAt: now,
+      );
+      _samples.insert(0, sample);
+    }
 
-    final effectiveTestName = testName ?? (sample?.testNames.isNotEmpty == true ? sample!.testNames.first : 'Diagnostic Panel');
-    final patientId = sample?.patientId ?? 'PT-UNKNOWN';
-    final patientName = sample?.patientName ?? 'Patient';
-    final orderId = sample?.orderId ?? 'ORD-UNKNOWN';
+    final effectiveTestName = testName ?? (sample.testNames.isNotEmpty ? sample.testNames.first : 'Diagnostic Panel');
+    final patientId = sample.patientId;
+    final patientName = sample.patientName;
+    final orderId = sample.orderId;
 
     final rIdx = _reports.indexWhere((r) => r.sampleBarcode.toUpperCase() == sampleBarcode.toUpperCase());
     if (rIdx != -1) {
@@ -862,14 +913,12 @@ class CentralDataStore extends ChangeNotifier {
     final now = DateTime.now();
     String patientName = 'Patient';
     String testName = 'Diagnostic Panel';
-    String orderId = 'ORD-REJ';
 
     final sIdx = _samples.indexWhere((s) => s.barcode.toUpperCase() == barcode.toUpperCase());
     if (sIdx != -1) {
       final s = _samples[sIdx];
       patientName = s.patientName;
       testName = s.testNames.isNotEmpty ? s.testNames.first : 'Test Panel';
-      orderId = s.orderId;
 
       final milestone = SampleEventModel(
         id: 'EV-REJ-$barcode-${now.millisecondsSinceEpoch}',

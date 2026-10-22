@@ -71,7 +71,7 @@ class _UniversalQrScannerModalState extends State<UniversalQrScannerModal>
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
+    )..forward();
   }
 
   @override

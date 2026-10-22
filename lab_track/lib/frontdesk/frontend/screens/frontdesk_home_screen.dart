@@ -137,8 +137,9 @@ class FrontDeskHomeScreen extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 // Live Reception Telemetry Bar
-                Row(
-                  children: const [
+                if (MediaQuery.sizeOf(context).height >= 700)
+                  Row(
+                    children: const [
                     Expanded(
                       child: TelemetryMetricCard(
                         title: 'Today Walk-ins',
@@ -168,9 +169,9 @@ class FrontDeskHomeScreen extends StatelessWidget {
                         accentColor: Color(0xFFD97706),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 28),
+                    ],
+                  ),
+                if (MediaQuery.sizeOf(context).height >= 700) const SizedBox(height: 28),
 
                 // Core Operational Workflows Header
                 Row(
@@ -229,12 +230,16 @@ class FrontDeskHomeScreen extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                const Text(
-                                  'Instant Report & Patient Lookup',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 16.5,
-                                    color: AppColors.textPrimary,
+                                const Expanded(
+                                  child: Text(
+                                    'Instant Report & Patient Lookup',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 16.5,
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -266,9 +271,13 @@ class FrontDeskHomeScreen extends StatelessWidget {
                               children: const [
                                 Icon(Icons.keyboard_outlined, size: 14, color: AppColors.textTertiary),
                                 SizedBox(width: 4),
-                                Text(
-                                  'Hotkeys: Press [Enter] for immediate lookup • Auto-filters on type',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textTertiary),
+                                Expanded(
+                                  child: Text(
+                                    'Hotkeys: Press [Enter] for immediate lookup • Auto-filters on type',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textTertiary),
+                                  ),
                                 ),
                               ],
                             ),
@@ -314,12 +323,16 @@ class FrontDeskHomeScreen extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                const Text(
-                                  'Thermal Barcode & Label Dispatch',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 16.5,
-                                    color: AppColors.textPrimary,
+                                const Expanded(
+                                  child: Text(
+                                    'Thermal Barcode & Label Dispatch',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 16.5,
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -343,7 +356,7 @@ class FrontDeskHomeScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 6),
                             const Text(
-                              'Generate high-resolution sterile barcode labels for walk-in patient test requisitions. Supports EDTA lavender, Serum red, and Fluoride grey tubes.',
+                              'Generate sterile barcode stickers for walk-in patient test requisitions. Supports EDTA lavender, Serum red, and Fluoride grey tubes.',
                               style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
                             ),
                             const SizedBox(height: 14),
@@ -351,9 +364,13 @@ class FrontDeskHomeScreen extends StatelessWidget {
                               children: const [
                                 Icon(Icons.check_circle_outline_rounded, size: 14, color: AppColors.successDark),
                                 SizedBox(width: 4),
-                                Text(
-                                  'ZPL & ESC/POS Thermal Protocol Compatible • 300 DPI Barcode Grade',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.successDark),
+                                Expanded(
+                                  child: Text(
+                                    'ZPL & ESC/POS Thermal Protocol Compatible • 300 DPI Barcode Grade',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.successDark),
+                                  ),
                                 ),
                               ],
                             ),
