@@ -11,6 +11,7 @@ import '../widgets/pathologist_sign_dialog.dart';
 import '../widgets/qc_rejection_dialog.dart';
 import '../widgets/rack_detail_modal.dart';
 import '../widgets/result_entry_dialog.dart';
+import '../../../shared/widgets/universal_qr_scanner_modal.dart';
 
 /// Clinical Laboratory & Pathologist Station Portal
 /// Features courier accessioning, visual analyzer racks, pre-analytical QC,
@@ -126,16 +127,18 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
                 color: Colors.white,
                 child: TabBar(
                   controller: _tabController,
+                  isScrollable: false,
                   labelColor: const Color(0xFF7C3AED),
                   unselectedLabelColor: AppColors.textSecondary,
                   indicatorColor: const Color(0xFF7C3AED),
                   indicatorWeight: 3,
-                  labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  labelPadding: EdgeInsets.zero,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 10),
                   tabs: const [
-                    Tab(icon: Icon(Icons.inbox_rounded, size: 20), text: 'Accession & Racks'),
-                    Tab(icon: Icon(Icons.science_rounded, size: 20), text: 'Bench Testing & Results'),
-                    Tab(icon: Icon(Icons.verified_rounded, size: 20), text: 'Pathologist Sign-Off'),
-                    Tab(icon: Icon(Icons.monitor_heart_rounded, size: 20), text: 'QC & Analyzers'),
+                    Tab(text: 'Accession & Racks'),
+                    Tab(text: 'Bench Testing & Results'),
+                    Tab(text: 'Pathologist Sign-Off'),
+                    Tab(text: 'QC & Analyzers'),
                   ],
                 ),
               ),
@@ -173,7 +176,8 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
         border: Border.all(color: AppColors.border),
         boxShadow: AppColors.softCardShadow,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 50,
@@ -248,8 +252,10 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
     final inTesting = provider.inAnalyzerSpecimens.length;
     final awaitingSign = provider.awaitingSignOffReports.length;
 
-    return Row(
-      children: [
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
         _buildKpiCard('Incoming Couriers', '$incoming', Icons.local_shipping_outlined, const Color(0xFF0284C7), const Color(0xFFE0F2FE)),
         const SizedBox(width: 10),
         _buildKpiCard('In Central Lab', '$inLab', Icons.inbox_rounded, const Color(0xFFD97706), const Color(0xFFFEF3C7)),
@@ -257,12 +263,14 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
         _buildKpiCard('In Analyzers', '$inTesting', Icons.science_rounded, const Color(0xFF7C3AED), const Color(0xFFF3E8FF)),
         const SizedBox(width: 10),
         _buildKpiCard('Awaiting Sign-Off', '$awaitingSign', Icons.draw_rounded, const Color(0xFF10B981), const Color(0xFFD1FAE5)),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildKpiCard(String label, String value, IconData icon, Color color, Color bg) {
-    return Expanded(
+    return SizedBox(
+      width: 170,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
@@ -304,18 +312,35 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF7C3AED).withOpacity(0.4)),
+        border: Border.all(color: const Color(0xFF7C3AED).withValues(alpha: 0.4)),
         boxShadow: AppColors.glowShadow(const Color(0xFF7C3AED), opacity: 0.15),
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3E8FF),
+          Tooltip(
+            message: 'Scan Barcode with Camera',
+            child: InkWell(
+              onTap: () async {
+                final code = await UniversalQrScannerModal.show(
+                  context,
+                  title: 'Rapid Accession Scanner',
+                  hint: 'Scan incoming vial barcode to accession into lab workflow',
+                );
+                if (code != null && code.isNotEmpty) {
+                  _quickScanController.text = code;
+                  _handleQuickAccession();
+                }
+              },
               borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3E8FF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF7C3AED), size: 22),
+              ),
             ),
-            child: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF7C3AED), size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -366,20 +391,22 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
             children: [
               const Icon(Icons.grid_view_rounded, size: 18, color: Color(0xFF7C3AED)),
               const SizedBox(width: 8),
-              const Text('ACTIVE ANALYZER SPECIMEN RACKS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary)),
+              const Expanded(
+                child: Text('ACTIVE ANALYZER SPECIMEN RACKS', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary)),
+              ),
               const Spacer(),
-              Text('${provider.racks.length} Racks Online', style: const TextStyle(fontSize: 12, color: AppColors.textTertiary, fontWeight: FontWeight.w600)),
+              Text('${provider.racks.length} Racks Online', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: AppColors.textTertiary, fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 12),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: MediaQuery.sizeOf(context).width < 900 ? 1 : 2,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 2.3,
+              childAspectRatio: MediaQuery.sizeOf(context).width < 900 ? 5.0 : 2.3,
             ),
             itemCount: provider.racks.length,
             itemBuilder: (context, index) {
@@ -394,7 +421,9 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
             children: [
               const Icon(Icons.local_shipping_outlined, size: 18, color: Color(0xFF0284C7)),
               const SizedBox(width: 8),
-              const Text('INCOMING COURIER TRANSIT BATCHES', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary)),
+              const Expanded(
+                child: Text('INCOMING COURIER TRANSIT BATCHES', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary)),
+              ),
               const Spacer(),
               Text('${provider.incomingCouriers.length} Pending Intake', style: const TextStyle(fontSize: 12, color: AppColors.textTertiary, fontWeight: FontWeight.w600)),
             ],
@@ -534,14 +563,17 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Filter Chips
-          Row(
-            children: [
-              _buildDepartmentFilterChip('All', provider),
-              const SizedBox(width: 8),
-              _buildDepartmentFilterChip('Hematology', provider),
-              const SizedBox(width: 8),
-              _buildDepartmentFilterChip('Biochemistry', provider),
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildDepartmentFilterChip('All', provider),
+                const SizedBox(width: 8),
+                _buildDepartmentFilterChip('Hematology', provider),
+                const SizedBox(width: 8),
+                _buildDepartmentFilterChip('Biochemistry', provider),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
 
@@ -908,8 +940,15 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
                   children: [
                     Row(
                       children: [
-                        Text(eq.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-                        const Spacer(),
+                        Expanded(
+                          child: Text(
+                            eq.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(6)),
@@ -923,8 +962,24 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Processed: ${eq.samplesProcessedToday} runs', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                        Text('Reagents: ${eq.reagentLevel}', style: const TextStyle(fontSize: 11, color: AppColors.textTertiary)),
+                        Expanded(
+                          child: Text(
+                            'Processed: ${eq.samplesProcessedToday} runs',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Reagents: ${eq.reagentLevel}',
+                            maxLines: 1,
+                            textAlign: TextAlign.end,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+                          ),
+                        ),
                       ],
                     ),
                   ],

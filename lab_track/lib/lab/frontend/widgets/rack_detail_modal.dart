@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../shared/theme/app_colors.dart';
+import '../../../shared/widgets/universal_qr_scanner_modal.dart';
 import '../../backend/models/lab_rack_model.dart';
 import '../providers/lab_provider.dart';
 
@@ -224,7 +225,21 @@ class _RackDetailModalState extends State<RackDetailModal> {
                       decoration: InputDecoration(
                         hintText: 'Enter/Scan Vial Barcode (e.g. SMP-77401)',
                         hintStyle: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
-                        prefixIcon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
+                        prefixIcon: IconButton(
+                          icon: const Icon(Icons.qr_code_scanner_rounded, size: 20, color: AppColors.primary),
+                          tooltip: 'Scan Tube Barcode',
+                          onPressed: () async {
+                            final code = await UniversalQrScannerModal.show(
+                              context,
+                              title: 'Scan Tube into Rack',
+                              hint: 'Scan specimen vial barcode to assign directly into rack well',
+                            );
+                            if (code != null && code.isNotEmpty) {
+                              _barcodeController.text = code;
+                              _addSampleToRack();
+                            }
+                          },
+                        ),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       ),

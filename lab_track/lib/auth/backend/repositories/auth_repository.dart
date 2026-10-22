@@ -325,7 +325,6 @@ class AuthRepository {
         user = defaultDemoLabTechnician;
         break;
       case UserRole.patient:
-      default:
         user = defaultDemoPatient;
         break;
     }

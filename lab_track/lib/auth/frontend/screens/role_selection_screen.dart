@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../../domain/enums/user_role.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/widgets/god_level_card.dart';
-import '../../../shared/widgets/pulsing_status_badge.dart';
 import '../providers/auth_provider.dart';
 import 'role_auth_screen.dart';
 import 'signup_screen.dart';

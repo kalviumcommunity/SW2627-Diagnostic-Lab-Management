@@ -141,6 +141,25 @@ class _PatientDashboardTab extends StatelessWidget {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary),
+            tooltip: 'Scan Receipt / Sample Barcode',
+            onPressed: () async {
+              final scanned = await UniversalQrScannerModal.show(
+                context,
+                title: 'Scan Receipt or Sample Barcode',
+                hint: 'Scan receipt QR or test vial barcode to track live custody',
+              );
+              if (scanned != null && scanned.isNotEmpty) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TrackSampleScreen(initialBarcode: scanned),
+                  ),
+                );
+              }
+            },
+          ),
           // Switch portal button
           TextButton.icon(
             onPressed: () => context.read<AuthProvider>().logout(),
@@ -218,7 +237,6 @@ class _PatientDashboardTab extends StatelessWidget {
             // Active Sample In-Transit Live Radar
             if (activeSample != null) ...[
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
@@ -278,10 +296,12 @@ class _PatientDashboardTab extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Recent Reports Section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              runSpacing: 8,
               children: [
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Container(
                       width: 4,
@@ -347,8 +367,9 @@ class _PatientDashboardTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            runSpacing: 8,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
@@ -776,9 +797,13 @@ class _PatientDashboardTab extends StatelessWidget {
                 const SizedBox(height: 3),
                 Row(
                   children: [
-                    Text(
-                      report.branchName,
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    Expanded(
+                      child: Text(
+                        report.branchName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Container(

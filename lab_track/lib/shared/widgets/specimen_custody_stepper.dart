@@ -41,7 +41,6 @@ class SpecimenCustodyStepper extends StatelessWidget {
       itemBuilder: (context, index) {
         final event = events[index];
         final isLatest = index == events.length - 1;
-        final isFirst = index == 0;
 
         return IntrinsicHeight(
           child: Row(

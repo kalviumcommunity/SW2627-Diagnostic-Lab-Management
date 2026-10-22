@@ -47,6 +47,7 @@ class ReportModel {
   final String status;
   final String? pdfUrl;
   final String? uploadedById;
+  final String? pathologistName;
   final DateTime? uploadedAt;
   final DateTime? verifiedAt;
   final List<ReportParameter> testResults;
@@ -74,7 +75,8 @@ class ReportModel {
     bool? isReady,
     this.testName = '',
     this.branchName = '',
-  })  : uploadedById = uploadedById ?? pathologistName,
+  })  : uploadedById = uploadedById,
+        pathologistName = pathologistName,
         uploadedAt = uploadedAt ?? createdAt,
         verifiedAt = verifiedAt ?? verificationDate,
         testResults = testResults ?? parameters ?? const [];
@@ -83,11 +85,9 @@ class ReportModel {
   List<ReportParameter> get parameters => testResults;
   DateTime get createdAt => uploadedAt ?? DateTime.now();
   DateTime? get verificationDate => verifiedAt;
-  String? get pathologistName => uploadedById;
   bool get isReady =>
-      status.toLowerCase() == 'verified' ||
-      status.toLowerCase() == 'ready' ||
-      status.toLowerCase() == 'reportready';
+      status.toLowerCase().contains('verified') ||
+      status.toLowerCase().contains('ready');
 
   Map<String, dynamic> toMap() {
     return {
@@ -131,7 +131,8 @@ class ReportModel {
       patientName: map['patientName']?.toString() ?? '',
       status: map['status']?.toString() ?? 'Processing',
       pdfUrl: map['pdfUrl']?.toString(),
-      uploadedById: map['uploadedById']?.toString() ?? map['pathologistName']?.toString(),
+      uploadedById: map['uploadedById']?.toString(),
+      pathologistName: map['pathologistName']?.toString(),
       uploadedAt: parseDate(map['uploadedAt']) ?? parseDate(map['createdAt']),
       verifiedAt: parseDate(map['verifiedAt']) ?? parseDate(map['verificationDate']),
       testResults: paramList,

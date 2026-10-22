@@ -1,8 +1,12 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import '../../../data/models/order_model.dart';
+import '../../../data/services/scanner_service.dart';
 import '../../../shared/theme/app_colors.dart';
+import '../../../shared/widgets/universal_qr_scanner_modal.dart';
 import '../../../auth/frontend/providers/auth_provider.dart';
 import '../../backend/models/phlebotomist_collection_request.dart';
 import '../providers/phlebotomist_provider.dart';
@@ -20,11 +24,14 @@ class ScanVialScreen extends StatefulWidget {
 class _ScanVialScreenState extends State<ScanVialScreen> with SingleTickerProviderStateMixin {
   late TextEditingController _barcodeController;
   final TextEditingController _notesController = TextEditingController();
+  late final MobileScannerController _scannerController;
 
   OrderModel? _currentOrder;
   String _selectedVialType = 'Purple Top (K2 EDTA)';
   double _temperatureCelsius = 4.0;
   bool _isTorchOn = false;
+  bool _isCameraActive = true;
+  String? _cameraErrorMessage;
   bool _isVerifyingBarcode = false;
   String? _barcodeError;
   bool _isSuccessScanned = false;
@@ -70,6 +77,12 @@ class _ScanVialScreenState extends State<ScanVialScreen> with SingleTickerProvid
     _currentOrder = widget.order;
     _barcodeController = TextEditingController();
 
+    _scannerController = MobileScannerController(
+      detectionSpeed: DetectionSpeed.noDuplicates,
+      facing: CameraFacing.back,
+      torchEnabled: false,
+    );
+
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1800),
@@ -92,6 +105,7 @@ class _ScanVialScreenState extends State<ScanVialScreen> with SingleTickerProvid
     _barcodeController.dispose();
     _notesController.dispose();
     _animController.dispose();
+    _scannerController.dispose();
     super.dispose();
   }
 
@@ -196,7 +210,21 @@ class _ScanVialScreenState extends State<ScanVialScreen> with SingleTickerProvid
               _isTorchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
               color: _isTorchOn ? Colors.amber : null,
             ),
-            onPressed: () => setState(() => _isTorchOn = !_isTorchOn),
+            onPressed: () async {
+              try {
+                await _scannerController.toggleTorch();
+              } catch (_) {}
+              setState(() => _isTorchOn = !_isTorchOn);
+            },
+          ),
+          IconButton(
+            tooltip: 'Flip Camera',
+            icon: const Icon(Icons.flip_camera_ios_rounded),
+            onPressed: () async {
+              try {
+                await _scannerController.switchCamera();
+              } catch (_) {}
+            },
           ),
         ],
       ),
@@ -252,7 +280,7 @@ class _ScanVialScreenState extends State<ScanVialScreen> with SingleTickerProvid
 
             // Scanner Viewfinder Card
             Container(
-              height: 240,
+              height: 250,
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.black,
@@ -270,21 +298,102 @@ class _ScanVialScreenState extends State<ScanVialScreen> with SingleTickerProvid
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Camera Simulation Background
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            center: Alignment.center,
-                            radius: 1.0,
-                            colors: [
-                              _isTorchOn ? const Color(0xFF334155) : const Color(0xFF1E293B),
-                              Colors.black,
-                            ],
+                    // Live MobileScanner or Graceful Simulation Fallback
+                    if (_isCameraActive && _cameraErrorMessage == null)
+                      Positioned.fill(
+                        child: MobileScanner(
+                          controller: _scannerController,
+                          onDetect: (capture) {
+                            if (_isVerifyingBarcode) return;
+                            for (final b in capture.barcodes) {
+                              final raw = b.rawValue ?? b.displayValue;
+                              if (raw != null && raw.trim().isNotEmpty) {
+                                final code = ScannerService.extractSampleBarcode(raw) ?? raw.trim().toUpperCase();
+                                if (code != _barcodeController.text) {
+                                  HapticFeedback.mediumImpact();
+                                  _applyBarcode(code);
+                                }
+                                break;
+                              }
+                            }
+                          },
+                          errorBuilder: (context, error) {
+                            return Container(
+                              color: const Color(0xFF1E293B),
+                              padding: const EdgeInsets.all(20),
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.videocam_off_rounded, color: Colors.white54, size: 36),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Live camera feed: ${error.errorCode.name}',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    ElevatedButton.icon(
+                                      onPressed: () {
+                                        setState(() {
+                                          _cameraErrorMessage = error.errorCode.name;
+                                          _isCameraActive = false;
+                                        });
+                                      },
+                                      icon: const Icon(Icons.touch_app_rounded, size: 14),
+                                      label: const Text('Switch to Presets / Manual', style: TextStyle(fontSize: 11)),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      )
+                    else
+                      // Fallback Simulation / Manual Viewfinder
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                              center: Alignment.center,
+                              radius: 1.0,
+                              colors: [
+                                _isTorchOn ? const Color(0xFF334155) : const Color(0xFF1E293B),
+                                Colors.black,
+                              ],
+                            ),
+                          ),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _isSuccessScanned ? Icons.check_circle_rounded : Icons.qr_code_scanner_rounded,
+                                  size: 44,
+                                  color: _isSuccessScanned ? AppColors.success : Colors.white24,
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  _isSuccessScanned
+                                      ? 'Locked: ${_barcodeController.text}'
+                                      : 'Simulation / Manual Input Active',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: _isSuccessScanned ? AppColors.success : Colors.white54,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
 
                     // Targeting Reticle & Viewfinder Corners
                     Container(
@@ -306,7 +415,7 @@ class _ScanVialScreenState extends State<ScanVialScreen> with SingleTickerProvid
                       animation: _animController,
                       builder: (context, child) {
                         return Positioned(
-                          top: 50 + (_animController.value * 130),
+                          top: 55 + (_animController.value * 130),
                           left: (MediaQuery.of(context).size.width - 240) / 2,
                           child: Container(
                             width: 200,
@@ -325,6 +434,55 @@ class _ScanVialScreenState extends State<ScanVialScreen> with SingleTickerProvid
                           ),
                         );
                       },
+                    ),
+
+                    // Top Floating Camera Control Badges
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton.filledTonal(
+                            visualDensity: VisualDensity.compact,
+                            tooltip: _isCameraActive ? 'Pause Camera' : 'Resume Camera',
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.black54,
+                              foregroundColor: Colors.white,
+                            ),
+                            icon: Icon(
+                              _isCameraActive ? Icons.videocam_rounded : Icons.videocam_off_rounded,
+                              size: 16,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isCameraActive = !_isCameraActive;
+                                _cameraErrorMessage = null;
+                              });
+                            },
+                          ),
+                          const SizedBox(width: 6),
+                          IconButton.filledTonal(
+                            visualDensity: VisualDensity.compact,
+                            tooltip: 'Fullscreen Scanner',
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.black54,
+                              foregroundColor: Colors.white,
+                            ),
+                            icon: const Icon(Icons.fullscreen_rounded, size: 18),
+                            onPressed: () async {
+                              final code = await UniversalQrScannerModal.show(
+                                context,
+                                title: 'Scan Sterile Vial Barcode',
+                                hint: 'Align specimen tube barcode (SMP-XXXXX) within reticle',
+                              );
+                              if (code != null && code.isNotEmpty) {
+                                _applyBarcode(code);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
                     ),
 
                     // Scan Instructions Overlay
@@ -362,6 +520,32 @@ class _ScanVialScreenState extends State<ScanVialScreen> with SingleTickerProvid
                       ),
                     ),
                   ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Fullscreen Sheet Scanner Launcher Button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final code = await UniversalQrScannerModal.show(
+                    context,
+                    title: 'Scan Sterile Vial Barcode',
+                    hint: 'Align specimen tube barcode (SMP-XXXXX) within reticle',
+                  );
+                  if (code != null && code.isNotEmpty) {
+                    _applyBarcode(code);
+                  }
+                },
+                icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
+                label: const Text('Open High-Precision Fullscreen Scanner'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary, width: 1.2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
             ),
