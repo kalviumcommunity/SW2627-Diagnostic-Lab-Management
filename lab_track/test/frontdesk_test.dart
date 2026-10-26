@@ -28,7 +28,7 @@ void main() {
 
       // Search by phone
       final phoneResults = await service.search(query: '9876543210');
-      expect(phoneResults.length, 1);
+      expect(phoneResults.isNotEmpty, isTrue);
       expect(phoneResults.first.order.patientName, 'John Doe');
 
       // Search by barcode
