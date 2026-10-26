@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../admin/backend/models/sla_metric_model.dart';
 import '../../data/models/branch_model.dart';
 import '../../data/models/order_model.dart';
@@ -32,10 +33,15 @@ class CentralDataStore extends ChangeNotifier {
   final List<UserModel> _users = [];
 
   bool _initialized = false;
+  FirebaseFirestore? _firestore;
+  bool _firestoreSyncStarted = false;
+  bool _isFirestoreConnected = false;
 
   CentralDataStore._internal() {
     _ensureInitialized();
   }
+
+  bool get isFirestoreConnected => _isFirestoreConnected;
 
   // ==========================================
   // Public Accessors (Read-Only Views)
@@ -553,6 +559,123 @@ class CentralDataStore extends ChangeNotifier {
         reagentLevel: 'Adequate (71%)',
       ),
     ]);
+
+    _initFirestoreSync();
+  }
+
+  void _initFirestoreSync() {
+    if (_firestoreSyncStarted) return;
+    _firestoreSyncStarted = true;
+    try {
+      _firestore = FirebaseFirestore.instance;
+      _subscribeToFirestoreCollections();
+    } catch (e) {
+      debugPrint('CentralDataStore: Firestore running in offline mode ($e)');
+    }
+  }
+
+  void _subscribeToFirestoreCollections() {
+    final fs = _firestore;
+    if (fs == null) return;
+
+    // 1. Orders collection real-time listener
+    fs.collection('orders').snapshots().listen((snapshot) {
+      for (final doc in snapshot.docs) {
+        try {
+          final order = OrderModel.fromMap(doc.data(), documentId: doc.id);
+          final idx = _orders.indexWhere((o) => o.id == order.id);
+          if (idx != -1) {
+            _orders[idx] = order;
+          } else {
+            _orders.insert(0, order);
+          }
+        } catch (e) {
+          debugPrint('CentralDataStore: Error parsing order ${doc.id}: $e');
+        }
+      }
+      _isFirestoreConnected = true;
+      notifyListeners();
+    }, onError: (e) {
+      debugPrint('CentralDataStore: Firestore orders listener notice: $e');
+    });
+
+    // 2. Samples collection real-time listener
+    fs.collection('samples').snapshots().listen((snapshot) {
+      for (final doc in snapshot.docs) {
+        try {
+          final sample = SampleModel.fromMap(doc.data(), documentId: doc.id);
+          final idx = _samples.indexWhere((s) => s.barcode.toUpperCase() == sample.barcode.toUpperCase());
+          if (idx != -1) {
+            _samples[idx] = sample;
+          } else {
+            _samples.insert(0, sample);
+          }
+        } catch (e) {
+          debugPrint('CentralDataStore: Error parsing sample ${doc.id}: $e');
+        }
+      }
+      _isFirestoreConnected = true;
+      notifyListeners();
+    }, onError: (e) {
+      debugPrint('CentralDataStore: Firestore samples listener notice: $e');
+    });
+
+    // 3. Reports collection real-time listener
+    fs.collection('reports').snapshots().listen((snapshot) {
+      for (final doc in snapshot.docs) {
+        try {
+          final report = ReportModel.fromMap(doc.data(), documentId: doc.id);
+          final idx = _reports.indexWhere((r) => r.id == report.id);
+          if (idx != -1) {
+            _reports[idx] = report;
+          } else {
+            _reports.insert(0, report);
+          }
+        } catch (e) {
+          debugPrint('CentralDataStore: Error parsing report ${doc.id}: $e');
+        }
+      }
+      _isFirestoreConnected = true;
+      notifyListeners();
+    }, onError: (e) {
+      debugPrint('CentralDataStore: Firestore reports listener notice: $e');
+    });
+  }
+
+  void _syncOrderToFirestore(OrderModel order) {
+    final fs = _firestore;
+    if (fs == null) return;
+    try {
+      fs.collection('orders').doc(order.id).set(order.toMap(), SetOptions(merge: true)).catchError((e) {
+        debugPrint('Firestore order sync warning: $e');
+      });
+    } catch (e) {
+      debugPrint('Firestore order sync error: $e');
+    }
+  }
+
+  void _syncSampleToFirestore(SampleModel sample) {
+    final fs = _firestore;
+    if (fs == null) return;
+    try {
+      fs.collection('samples').doc(sample.barcode).set(sample.toMap(), SetOptions(merge: true)).catchError((e) {
+        debugPrint('Firestore sample sync warning: $e');
+      });
+    } catch (e) {
+      debugPrint('Firestore sample sync error: $e');
+    }
+  }
+
+  void _syncReportToFirestore(ReportModel report) {
+    final fs = _firestore;
+    if (fs == null) return;
+    try {
+      fs.collection('reports').doc(report.id).set(report.toMap(), SetOptions(merge: true)).catchError((e) {
+        debugPrint('Firestore report sync warning: $e');
+      });
+    } catch (e) {
+      debugPrint('Firestore report sync error: $e');
+    }
   }
 
   // ==========================================================
@@ -562,6 +685,7 @@ class CentralDataStore extends ChangeNotifier {
   /// 1. Patient or Front Desk creates a new booking order
   void createOrder(OrderModel order) {
     _orders.insert(0, order);
+    _syncOrderToFirestore(order);
 
     // If barcodes are specified or generate default sample
     for (final barcode in order.sampleBarcodes) {
@@ -611,6 +735,7 @@ class CentralDataStore extends ChangeNotifier {
         assignedPhlebotomistId: phlebotomistId,
         assignedPhlebotomistName: phlebotomistName,
       );
+      _syncOrderToFirestore(_orders[oIdx]);
     }
 
     // 2. Insert / Update Sample
@@ -642,6 +767,7 @@ class CentralDataStore extends ChangeNotifier {
         events: events,
         lastEventAt: now,
       );
+      _syncSampleToFirestore(_samples[sIdx]);
     } else {
       final patientName = oIdx != -1 ? _orders[oIdx].patientName : 'Patient';
       final patientPhone = oIdx != -1 ? _orders[oIdx].patientPhone : '';
@@ -667,6 +793,7 @@ class CentralDataStore extends ChangeNotifier {
         createdAt: now,
       );
       _samples.insert(0, newSample);
+      _syncSampleToFirestore(newSample);
     }
 
     notifyListeners();
@@ -706,6 +833,7 @@ class CentralDataStore extends ChangeNotifier {
           events: events,
           lastEventAt: now,
         );
+        _syncSampleToFirestore(_samples[sIdx]);
       }
     }
     notifyListeners();
@@ -748,6 +876,7 @@ class CentralDataStore extends ChangeNotifier {
         events: events,
         lastEventAt: now,
       );
+      _syncSampleToFirestore(_samples[sIdx]);
     }
 
     if (rackId != null && rackId.isNotEmpty) {
@@ -783,6 +912,7 @@ class CentralDataStore extends ChangeNotifier {
         events: events,
         lastEventAt: now,
       );
+      _syncSampleToFirestore(_samples[sIdx]);
     }
 
     final rIdx = _racks.indexWhere((r) => r.id == rackId);
@@ -849,6 +979,7 @@ class CentralDataStore extends ChangeNotifier {
         createdAt: existing.createdAt,
       );
       _reports[rIdx] = updated;
+      _syncReportToFirestore(updated);
       notifyListeners();
       return updated;
     } else {
@@ -867,6 +998,7 @@ class CentralDataStore extends ChangeNotifier {
         createdAt: now,
       );
       _reports.insert(0, newReport);
+      _syncReportToFirestore(newReport);
       notifyListeners();
       return newReport;
     }
@@ -902,6 +1034,7 @@ class CentralDataStore extends ChangeNotifier {
       createdAt: rep.createdAt,
     );
     _reports[rIdx] = verified;
+    _syncReportToFirestore(verified);
 
     // Transition Sample to reportReady
     final sIdx = _samples.indexWhere((s) => s.barcode.toUpperCase() == rep.sampleBarcode.toUpperCase());
@@ -924,12 +1057,14 @@ class CentralDataStore extends ChangeNotifier {
         events: events,
         lastEventAt: now,
       );
+      _syncSampleToFirestore(_samples[sIdx]);
     }
 
     // Transition Order to completed
     final oIdx = _orders.indexWhere((o) => o.id == rep.orderId);
     if (oIdx != -1) {
       _orders[oIdx] = _orders[oIdx].copyWith(status: OrderStatus.completed);
+      _syncOrderToFirestore(_orders[oIdx]);
     }
 
     notifyListeners();
@@ -971,6 +1106,7 @@ class CentralDataStore extends ChangeNotifier {
         events: events,
         lastEventAt: now,
       );
+      _syncSampleToFirestore(_samples[sIdx]);
     }
 
     final qc = QcInspectionModel(
@@ -1008,6 +1144,7 @@ class CentralDataStore extends ChangeNotifier {
       createdAt: now,
     );
     _orders.insert(0, recollectionOrder);
+    _syncOrderToFirestore(recollectionOrder);
 
     notifyListeners();
     return qc;
@@ -1020,6 +1157,7 @@ class CentralDataStore extends ChangeNotifier {
     } else {
       _samples.insert(0, sample);
     }
+    _syncSampleToFirestore(sample);
     notifyListeners();
   }
 

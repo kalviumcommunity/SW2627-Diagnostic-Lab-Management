@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../auth/frontend/providers/auth_provider.dart';
 import '../../../data/models/report_model.dart';
@@ -38,6 +39,7 @@ class _LabHomeScreenScaffold extends StatefulWidget {
 class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _quickScanController = TextEditingController();
+  DateTime? _lastBackPressed;
 
   @override
   void initState() {
@@ -50,6 +52,28 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
     _tabController.dispose();
     _quickScanController.dispose();
     super.dispose();
+  }
+
+  void _handleBackPress() {
+    if (_tabController.index != 0) {
+      _tabController.animateTo(0);
+      return;
+    }
+
+    final now = DateTime.now();
+    if (_lastBackPressed == null || now.difference(_lastBackPressed!) > const Duration(seconds: 2)) {
+      _lastBackPressed = now;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Press back again to exit LabTrack'),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    SystemNavigator.pop();
   }
 
   void _handleQuickAccession() async {
@@ -75,8 +99,14 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
     final user = context.watch<AuthProvider>().currentUser;
     final labProvider = context.watch<LabProvider>();
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleBackPress();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Laboratory & Pathologist Portal', style: TextStyle(fontWeight: FontWeight.w700)),
         actions: [

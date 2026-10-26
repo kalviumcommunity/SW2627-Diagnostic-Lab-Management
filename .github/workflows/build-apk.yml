@@ -36,6 +36,18 @@ jobs:
           flutter clean
           flutter pub get
 
+      - name: 🔑 Output SHA-1 Fingerprints for Firebase Google Login & Auth
+        run: |
+          cd android
+          chmod +x gradlew
+          REPORT=$(./gradlew signingReport || true)
+          echo "$REPORT"
+          echo "### 🔑 Android Signing Fingerprints (Register in Firebase Console)" >> $GITHUB_STEP_SUMMARY
+          echo "Copy these fingerprints into **Firebase Console > Project Settings > Your Android App**:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "$REPORT" | grep -E "(Variant|Config|Store|Alias|MD5|SHA1|SHA-256)" >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
       - name: 🔨 Build Release APK
         run: flutter build apk --release --android-skip-build-dependency-validation
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../shared/shared.dart';
 import '../../../auth/frontend/providers/auth_provider.dart';
@@ -17,6 +18,8 @@ class PatientHomeScreen extends StatefulWidget {
 
 class _PatientHomeScreenState extends State<PatientHomeScreen> {
   int _currentIndex = 0;
+  final List<int> _tabHistory = [0];
+  DateTime? _lastBackPressed;
 
   final List<Widget> _tabs = const [
     _PatientDashboardTab(),
@@ -25,21 +28,66 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     MyReportsScreen(),
   ];
 
+  void _onTabTapped(int index) {
+    if (_currentIndex == index) return;
+    setState(() {
+      _currentIndex = index;
+      _tabHistory.add(index);
+    });
+  }
+
+  void _handleBackPress() {
+    if (_tabHistory.length > 1) {
+      _tabHistory.removeLast();
+      setState(() => _currentIndex = _tabHistory.last);
+      return;
+    }
+    if (_currentIndex != 0) {
+      setState(() {
+        _currentIndex = 0;
+        _tabHistory.clear();
+        _tabHistory.add(0);
+      });
+      return;
+    }
+
+    final now = DateTime.now();
+    if (_lastBackPressed == null || now.difference(_lastBackPressed!) > const Duration(seconds: 2)) {
+      _lastBackPressed = now;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Press back again to exit LabTrack'),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    SystemNavigator.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _tabs,
-      ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleBackPress();
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: _currentIndex,
+          children: _tabs,
         ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
+        bottomNavigationBar: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+          ),
+          child: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: _onTabTapped,
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.dashboard_outlined),
