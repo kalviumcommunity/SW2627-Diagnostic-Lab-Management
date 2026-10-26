@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../auth/frontend/providers/auth_provider.dart';
 import '../../../shared/shared.dart';
@@ -28,9 +29,46 @@ class _AdminHomeScreenScaffold extends StatefulWidget {
 
 class _AdminHomeScreenScaffoldState extends State<_AdminHomeScreenScaffold> {
   int _currentIndex = 0;
+  final List<int> _tabHistory = [0];
+  DateTime? _lastBackPressed;
 
   void _navigateToTab(int index) {
-    setState(() => _currentIndex = index);
+    if (_currentIndex == index) return;
+    setState(() {
+      _currentIndex = index;
+      _tabHistory.add(index);
+    });
+  }
+
+  void _handleBackPress() {
+    if (_tabHistory.length > 1) {
+      _tabHistory.removeLast();
+      setState(() => _currentIndex = _tabHistory.last);
+      return;
+    }
+    if (_currentIndex != 0) {
+      setState(() {
+        _currentIndex = 0;
+        _tabHistory.clear();
+        _tabHistory.add(0);
+      });
+      return;
+    }
+
+    final now = DateTime.now();
+    if (_lastBackPressed == null || now.difference(_lastBackPressed!) > const Duration(seconds: 2)) {
+      _lastBackPressed = now;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Press back again to exit LabTrack'),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    SystemNavigator.pop();
   }
 
   @override
@@ -42,8 +80,14 @@ class _AdminHomeScreenScaffoldState extends State<_AdminHomeScreenScaffold> {
       const StaffManagementScreen(showAppBar: false),
     ];
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleBackPress();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Admin SLA & TAT Analytics', style: TextStyle(fontWeight: FontWeight.w700)),
         actions: [
@@ -70,7 +114,7 @@ class _AdminHomeScreenScaffoldState extends State<_AdminHomeScreenScaffold> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: _navigateToTab,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: const Color(0xFF6366F1), // Royal Indigo
         unselectedItemColor: AppColors.textSecondary,

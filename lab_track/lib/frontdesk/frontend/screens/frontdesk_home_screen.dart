@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../auth/frontend/providers/auth_provider.dart';
 import '../../../shared/shared.dart';
@@ -6,14 +7,44 @@ import 'instant_search_screen.dart';
 import 'thermal_barcode_dispatch_screen.dart';
 
 /// God-Level Front Desk Reception & Transit Hub Console
-class FrontDeskHomeScreen extends StatelessWidget {
+class FrontDeskHomeScreen extends StatefulWidget {
   const FrontDeskHomeScreen({super.key});
+
+  @override
+  State<FrontDeskHomeScreen> createState() => _FrontDeskHomeScreenState();
+}
+
+class _FrontDeskHomeScreenState extends State<FrontDeskHomeScreen> {
+  DateTime? _lastBackPressed;
+
+  void _handleBackPress() {
+    final now = DateTime.now();
+    if (_lastBackPressed == null || now.difference(_lastBackPressed!) > const Duration(seconds: 2)) {
+      _lastBackPressed = now;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Press back again to exit LabTrack'),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    SystemNavigator.pop();
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().currentUser;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleBackPress();
+      },
+      child: Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Row(
@@ -387,6 +418,7 @@ class FrontDeskHomeScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

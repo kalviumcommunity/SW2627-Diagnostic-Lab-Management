@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../../../data/services/central_data_store.dart';
 import '../../../domain/enums/user_role.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/widgets/god_level_card.dart';
@@ -58,6 +60,25 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
     }
   }
 
+  DateTime? _lastBackPressed;
+
+  void _handleBackPress() {
+    final now = DateTime.now();
+    if (_lastBackPressed == null || now.difference(_lastBackPressed!) > const Duration(seconds: 2)) {
+      _lastBackPressed = now;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Press back again to exit LabTrack'),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    SystemNavigator.pop();
+  }
+
   void _handleCustomAuth(UserRole role) {
     Navigator.push(
       context,
@@ -67,7 +88,13 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleBackPress();
+      },
+      child: Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Center(
@@ -223,8 +250,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildHeroHeader() {
     return Column(
@@ -280,37 +308,49 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
         ),
         const SizedBox(height: 12),
 
-        // Live Network Telemetry Status Pill
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-          decoration: BoxDecoration(
-            color: AppColors.successLight,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.success.withOpacity(0.35)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(
-                  color: AppColors.success,
-                  shape: BoxShape.circle,
+        // Live Network / Cloud Status Pill
+        AnimatedBuilder(
+          animation: CentralDataStore.instance,
+          builder: (context, _) {
+            final isOnline = CentralDataStore.instance.isFirestoreConnected;
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              decoration: BoxDecoration(
+                color: isOnline ? AppColors.successLight : const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isOnline
+                      ? AppColors.success.withOpacity(0.35)
+                      : const Color(0xFFD97706).withOpacity(0.35),
                 ),
               ),
-              const SizedBox(width: 7),
-              const Text(
-                'LIVE NETWORK: 5 HUBS ONLINE • 99.98% SLA COMPLIANCE',
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.successDark,
-                  letterSpacing: 0.6,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: isOnline ? AppColors.success : const Color(0xFFD97706),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 7),
+                  Text(
+                    isOnline
+                        ? 'CLOUD DATABASE: LIVE REALTIME SYNC • ONLINE'
+                        : 'LOCAL HYDRATION: OFFLINE DEMO MODE',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      color: isOnline ? AppColors.successDark : const Color(0xFFB45309),
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ],
     );
