@@ -320,8 +320,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> with SingleTi
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isOnline
-                      ? AppColors.success.withOpacity(0.35)
-                      : const Color(0xFFD97706).withOpacity(0.35),
+                      ? const Color(0x5910B981)
+                      : const Color(0x59D97706),
                 ),
               ),
               child: Row(
