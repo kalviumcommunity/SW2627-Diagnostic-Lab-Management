@@ -6,10 +6,19 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   build-apk:
     name: 📱 Build Android Release APK
     runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx3584m -XX:MaxMetaspaceSize=1024m -XX:ReservedCodeCacheSize=512m -Dfile.encoding=UTF-8"
     defaults:
       run:
         working-directory: lab_track
@@ -23,6 +32,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+          cache: 'gradle'
 
       - name: 🐦 Set up Flutter SDK
         uses: subosito/flutter-action@v2
@@ -30,30 +40,37 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: 🧹 Clean Environment & Resolve Dependencies
+      - name: 🔧 Grant Execute Permission for Gradlew
+        run: chmod +x android/gradlew
+
+      - name: 🧹 Clean Environment & Stale Configurations
         run: |
           rm -f android/local.properties
           flutter clean
           flutter pub get
 
-      - name: 🔑 Output SHA-1 Fingerprints for Firebase Google Login & Auth
-        run: |
-          cd android
-          chmod +x gradlew
-          REPORT=$(./gradlew signingReport || true)
-          echo "$REPORT"
-          echo "### 🔑 Android Signing Fingerprints (Register in Firebase Console)" >> $GITHUB_STEP_SUMMARY
-          echo "Copy these fingerprints into **Firebase Console > Project Settings > Your Android App**:" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "$REPORT" | grep -E "(Variant|Config|Store|Alias|MD5|SHA1|SHA-256)" >> $GITHUB_STEP_SUMMARY || true
-          echo '```' >> $GITHUB_STEP_SUMMARY
-
       - name: 🔨 Build Release APK
         run: flutter build apk --release --android-skip-build-dependency-validation
+
+      - name: 🔑 Output SHA-1 & SHA-256 Fingerprints for Firebase Console
+        if: success()
+        run: |
+          echo "### 🔑 Android Signing Fingerprints (Register in Firebase Console)" >> $GITHUB_STEP_SUMMARY
+          echo "Add these fingerprints under **Firebase Console > Project Settings > Your Android App (com.labtrack.lab_track)**:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          if [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
+            keytool -printcert -jarfile build/app/outputs/flutter-apk/app-release.apk 2>/dev/null | grep -E "(Owner|SHA1|SHA256)" | tee -a $GITHUB_STEP_SUMMARY || true
+          fi
+          if [ -f ~/.android/debug.keystore ]; then
+            keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android 2>/dev/null | grep -E "(SHA1|SHA256)" | tee -a $GITHUB_STEP_SUMMARY || true
+          fi
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: 📤 Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: labtrack-release-apk
-          path: lab_track/build/app/outputs/flutter-apk/app-release.apk
+          path: lab_track/build/app/outputs/flutter-apk/*.apk
           retention-days: 14
+          if-no-files-found: error
+
