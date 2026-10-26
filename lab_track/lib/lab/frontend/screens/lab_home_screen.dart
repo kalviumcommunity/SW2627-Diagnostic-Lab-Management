@@ -206,8 +206,8 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
         border: Border.all(color: AppColors.border),
         boxShadow: AppColors.softCardShadow,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: 50,
@@ -696,14 +696,16 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
           const SizedBox(height: 12),
           Row(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('DIAGNOSTIC TEST PANEL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textTertiary)),
-                  Text(sample.testNames.isNotEmpty ? sample.testNames.join(", ") : 'Diagnostic Assay', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('DIAGNOSTIC TEST PANEL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textTertiary)),
+                    Text(sample.testNames.isNotEmpty ? sample.testNames.join(", ") : 'Diagnostic Assay', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                  ],
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
