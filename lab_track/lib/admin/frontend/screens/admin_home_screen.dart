@@ -141,8 +141,9 @@ class _AdminHomeScreenScaffoldState extends State<_AdminHomeScreenScaffold> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _AdminOverviewTab extends StatelessWidget {

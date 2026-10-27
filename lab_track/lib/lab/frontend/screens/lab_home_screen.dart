@@ -191,8 +191,9 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ==========================================
   // Header Card

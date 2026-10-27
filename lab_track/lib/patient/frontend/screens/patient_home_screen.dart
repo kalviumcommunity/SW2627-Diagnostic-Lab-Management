@@ -112,8 +112,9 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _PatientDashboardTab extends StatelessWidget {
