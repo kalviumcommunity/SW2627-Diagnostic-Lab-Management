@@ -21,12 +21,22 @@ serving, not authenticated end-to-end application behavior.
 
 [`build-apk.yml`](../.github/workflows/build-apk.yml) runs independently on every
 PR, manual dispatch, and pushes to `main`, `master`, `Aryan-*`, `feat/*` and
-`fix/*`. It installs Java 17 and stable Flutter, removes local SDK properties,
-cleans/resolves dependencies and runs:
+`fix/*`. It installs Java 17, NDK 28.2.13676358 and stable Flutter, caches pub packages,
+generates SDK paths in local.properties, resolves dependencies and runs:
 
 ```sh
-flutter build apk --release --android-skip-build-dependency-validation
+flutter build apk --release --android-skip-build-dependency-validation --no-shrink --verbose --no-shrink --verbose
 ```
+
+APK runs queue rather than cancel in progress, with a 45-minute job timeout
+and a 30-minute build timeout. The workflow writes signing fingerprints to the
+job summary. It omits the deprecated global `ndk.dir` so native plugins can resolve
+their declared NDK versions without conflicting with a forced directory.
+
+APK runs queue rather than cancel in progress, with a 45-minute job timeout
+and a 30-minute build timeout. The workflow writes signing fingerprints to the
+job summary. It omits the deprecated global `ndk.dir` so native plugins can resolve
+their declared NDK versions without conflicting with a forced directory.
 
 The `labtrack-release-apk` artifact is retained 14 days. Dependency validation is
 explicitly bypassed; this is not proof of toolchain compatibility validation.

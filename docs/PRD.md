@@ -7,7 +7,7 @@
 |## Implementation status (27 October 2026)
 
 This PRD records product targets. The requirements, acceptance criteria and NFRs
-below are not a completion report. The current `main` snapshot (`d143a36`)
+below are not a completion report. The current `main` snapshot (`a1374a8`)
 implements five role dashboards, shared in-memory operational data, 100 seeded
 users, booking/collection/search/lab/admin workflows and camera/manual scanning.
 

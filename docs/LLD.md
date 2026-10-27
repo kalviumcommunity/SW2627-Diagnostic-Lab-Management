@@ -83,6 +83,8 @@ state in one process; they do not establish multi-device Firebase persistence.
 ## Android configuration
 
 Current Gradle sources specify AGP 8.9.1, Kotlin 2.3.0, Java/JVM 17, compile SDK 36
-and minimum SDK 23. SDK discovery uses `android/local.properties`, then
+and minimum SDK 23. The app and APK workflow pin NDK 28.2.13676358, matching
+the native JNI dependency. The app and APK workflow pin NDK 28.2.13676358, matching
+the native JNI dependency. SDK discovery uses `android/local.properties`, then
 `FLUTTER_ROOT`/`FLUTTER_HOME`. Release builds currently use the debug signing
 configuration; the CI APK is a build artifact, not a production-signed release.

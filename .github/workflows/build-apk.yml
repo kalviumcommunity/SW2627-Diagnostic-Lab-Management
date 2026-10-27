@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 45          # hard ceiling so stale runs don't eat free minutes forever
     env:
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:ReservedCodeCacheSize=512m -Dfile.encoding=UTF-8"
-      ANDROID_NDK_VERSION: "27.0.12077973"   # pinned — avoids on-the-fly NDK install inside Gradle
+      ANDROID_NDK_VERSION: "28.2.13676358"   # pinned — avoids on-the-fly NDK install inside Gradle
     defaults:
       run:
         working-directory: lab_track
@@ -67,7 +67,6 @@ jobs:
         run: |
           echo "flutter.sdk=$(which flutter | sed 's|/bin/flutter||')" > android/local.properties
           echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
-          echo "ndk.dir=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION" >> android/local.properties
           cat android/local.properties
 
       - name: 📦 Flutter pub get

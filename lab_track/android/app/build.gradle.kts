@@ -13,7 +13,7 @@ android {
     compileSdk = 36
     // Pinned NDK version — must match ANDROID_NDK_VERSION in .github/workflows/build-apk.yml
     // This prevents Gradle from downloading NDK on-the-fly during CI/CD builds.
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

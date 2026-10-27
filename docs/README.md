@@ -1,6 +1,6 @@
 # LabTrack documentation
 
-Documentation for the implementation on `main` at `d143a36` (27 October 2026).
+Documentation for the implementation on `main` at `a1374a8` (27 October 2026).
 The application is a Flutter prototype with five role dashboards and shared,
 seeded data. Features described as requirements are not automatically complete.
 
