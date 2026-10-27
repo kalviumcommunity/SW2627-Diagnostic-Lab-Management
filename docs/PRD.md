@@ -4,7 +4,31 @@
 ## 1. Document Control & Metadata
 
 | Field | Value |
-|---|---|
+|## Implementation status (27 October 2026)
+
+This PRD records product targets. The requirements, acceptance criteria and NFRs
+below are not a completion report. The current `main` snapshot (`a1374a8`)
+implements five role dashboards, shared in-memory operational data, 100 seeded
+users, booking/collection/search/lab/admin workflows and camera/manual scanning.
+
+| Requirement area | Current evidence and remaining work |
+| --- | --- |
+| FR-01 authentication | Role routing and Firebase paths exist alongside demo/seed/OTP shortcuts; production backend authorization remains to be enforced and verified. |
+| FR-02–04 booking/collection | Interactive booking, pickup and vial workflows exist; automatic geographic assignment is not established. |
+| FR-05–06 custody/transit | Sample events and routing states exist; durable append-only storage and multi-device synchronization are not established. |
+| FR-07–08 laboratory | Accessioning, racks, QC, result entry and authorization update shared state; certified signatures and generated PDF delivery remain integration work. |
+| FR-09–10 reception/patient | Search, tracking, report and label views exist; latency targets and physical print/PDF export are not verified. |
+| FR-11 notifications | Notification service is scaffolding; push delivery is not implemented. |
+| FR-12 administration | Branch/staff and SLA views use demo/shared state; production metrics are not validated. |
+
+Scalability, uptime, offline synchronization, privacy/compliance and performance
+targets below require separate implementation and validation. In particular,
+no healthcare certification is established by prototype UI labels. See
+[HLD](HLD.md), [LLD](LLD.md) and [User Guide](USER_GUIDE.md) for implemented behavior.
+
+---
+
+---|---|
 | **Product Name** | LabTrack (Diagnostic Lab Management System) |
 | **Project Code** | SW2627 |
 | **Document Version** | 2.0.0 |

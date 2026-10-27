@@ -1,107 +1,88 @@
-# CI/CD Pipeline Architecture & Quality Gates
-# SW2627: Diagnostic Lab Management (LabTrack)
+# CI/CD workflows and verification
 
-This document describes the Continuous Integration and Continuous Delivery (CI/CD) architecture implemented for **LabTrack**.
+The source of truth is [`.github/workflows`](../.github/workflows).
+Documentation-only PRs still trigger the workflows: there are no docs path filters.
 
----
+## Pull-request checks
 
-## 🏗️ Pipeline Overview
+[`ci.yml`](../.github/workflows/ci.yml) runs on push, pull request and manual
+dispatch. A concurrency group cancels older runs for the same workflow/ref.
 
-Whenever a commit is pushed or a Pull Request is opened against `main`, `master`, `develop`, or feature branches, GitHub Actions automatically executes our multi-tier CI/CD pipeline.
+| Job | Dependency | Commands / outcome |
+| --- | --- | --- |
+| Static Analysis & Unit Tests | None | Stable Flutter, dependency resolution, formatting advisory, `flutter analyze --fatal-warnings --no-fatal-infos`, `flutter test --coverage` |
+| Web Compilation & Chrome Execution | Analysis/tests | `flutter build web --release`, `flutter test --platform chrome`; web artifact retained 7 days |
+| Docker Multi-Stage Build & Container Smoke Test | Web/Chrome | Build/load `labtrack:ci-test`, start Nginx on port 8080, retry up to 15 times for HTTP 200, inspect logs and remove successful test container |
 
-```mermaid
-graph TD
-    Trigger["Git Push / Pull Request / Manual Dispatch"] --> Job1
+Formatting is advisory: the command uses `|| echo` and `continue-on-error`.
+Analyzer errors/warnings fail the job; informational diagnostics do not. Coverage
+is generated without a minimum coverage threshold. HTTP 200 checks static
+serving, not authenticated end-to-end application behavior.
 
-    subgraph Job1 ["Job 1: Static Analysis & Unit Tests"]
-        J1_1["Setup Flutter SDK (Cached)"] --> J1_2["flutter pub get"]
-        J1_2 --> J1_3["dart format check"]
-        J1_3 --> J1_4["flutter analyze --fatal-warnings<br/>(Zero Syntax & Compile Errors)"]
-        J1_4 --> J1_5["flutter test --coverage"]
-    end
+[`build-apk.yml`](../.github/workflows/build-apk.yml) runs independently on every
+PR, manual dispatch, and pushes to `main`, `master`, `Aryan-*`, `feat/*` and
+`fix/*`. It installs Java 17, NDK 28.2.13676358 and stable Flutter, caches pub packages,
+generates SDK paths in local.properties, resolves dependencies and runs:
 
-    Job1 --> Job2
-
-    subgraph Job2 ["Job 2: Web Build & Headless Chrome Execution"]
-        J2_1["Setup Flutter SDK"] --> J2_2["flutter build web --release<br/>(Compiles for Chrome)"]
-        J2_2 --> J2_3["flutter test --platform chrome<br/>(Runs Headless Chrome Tests)"]
-        J2_3 --> J2_4["Archive Web Build Artifact"]
-    end
-
-    Job2 --> Job3
-
-    subgraph Job3 ["Job 3: Multi-Stage Docker Container Verification"]
-        J3_1["docker build (Multi-stage)"] --> J3_2["Run Container on Port 8080"]
-        J3_2 --> J3_3["Health Check (HTTP 200 OK)"]
-    end
-
-    Job3 --> Gate["✅ Quality Gates Passed - Ready to Merge"]
+```sh
+flutter build apk --release --android-skip-build-dependency-validation --no-shrink --verbose
 ```
 
----
+APK runs queue rather than cancel in progress, with a 45-minute job timeout
+and a 30-minute build timeout. The workflow writes signing fingerprints to the
+job summary. It omits the deprecated global `ndk.dir` so native plugins can resolve
+their declared NDK versions without conflicting with a forced directory.
 
-## 🛡️ The Three Quality Gates
+The `labtrack-release-apk` artifact is retained 14 days. Dependency validation is
+explicitly bypassed; this is not proof of toolchain compatibility validation.
+The Android project currently signs release builds with debug keys.
 
-### Gate 1: Code Integrity & Error Prevention
-- **Tool**: `flutter analyze --fatal-warnings`
-- **Objective**: Prevents broken builds, unresolved symbols, missing parameters, type mismatches, or missing color tokens (such as `AppColors.infoDark`) from ever reaching the repository.
-- **Fail Condition**: Any syntax error, compile error, or code warning terminates the workflow immediately.
+## Deployment
 
-### Gate 2: Web & Chrome Target Validation
-- **Commands**:
-  ```bash
-  flutter build web --release
-  flutter test --platform chrome
-  ```
-- **Objective**: Guarantees that the app compiles properly to Web/Chrome, all assets/HTML/JS bundles generate without runtime errors, and executes tests headlessly in a real Google Chrome instance.
-- **Artifact**: Uploads the production web build archive (`labtrack-web-release`) to GitHub Actions for direct inspection.
+[`deploy-pages.yml`](../.github/workflows/deploy-pages.yml) runs on pushes to
+`main`/`master` or manual dispatch. It builds web with a repository-name base href
+and publishes through GitHub Pages using the `github-pages` environment. It is a
+separate workflow without a dependency on CI completion. It does not run just
+because a PR was opened. The Docker CI job builds locally and does not push an
+image to a registry.
 
-### Gate 3: Production Docker Container Health Check
-- **Commands**:
-  ```bash
-  docker build -t labtrack:ci-test .
-  docker run -d --name test-app -p 8080:8080 labtrack:ci-test
-  curl -s -o /dev/null -w "%{http_code}" http://localhost:8080
-  ```
-- **Objective**: Validates that the multi-stage Docker build compiles the Flutter Web artifacts and serves them cleanly via Nginx on Alpine Linux with HTTP 200 status.
+## Local verification
 
----
+From `lab_track`, reproduce the analysis/test/web stages with:
 
-## 🚀 Running the Pipeline Locally
-
-Developers can run the exact same verification locally before pushing to prevent CI failures:
-
-### On Windows (PowerShell):
-```powershell
-.\scripts\verify.ps1
+```sh
+flutter pub get
+flutter analyze --fatal-warnings --no-fatal-infos
+flutter test --coverage
+flutter build web --release
+flutter test --platform chrome
 ```
 
-### On Linux / macOS / Git Bash:
-```bash
-chmod +x scripts/verify.sh
-./scripts/verify.sh
+Chrome must be installed; set `CHROME_EXECUTABLE` if needed. Docker and Android
+require their own installed toolchains. Run the APK command above for Android;
+the Docker check builds from the repository root:
+
+```sh
+docker build -t labtrack:ci-test .
+docker run -d --name test-app -p 8080:8080 labtrack:ci-test
+curl --fail http://localhost:8080
+docker stop test-app
+docker rm test-app
 ```
 
----
+The convenience scripts [`verify.ps1`](../scripts/verify.ps1) and
+[`verify.sh`](../scripts/verify.sh) resolve dependencies, analyze, test and build
+web. They do not run Chrome-platform tests, Docker or APK generation. Their
+analyzer flags also differ from CI, so they are not exact pipeline replicas.
 
-## 🤖 GitHub Actions Workflow Configurations
+## Test coverage and merge readiness
 
-| Workflow File | Purpose | Trigger Events |
-|---|---|---|
-| [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | Code analysis, unit tests, Chrome web build, and Docker health test | Push, PR, and `workflow_dispatch` |
-| [`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml) | Automated CD deployment to GitHub Pages | Push to `main`/`master` |
+The current test tree covers widgets, admin, front desk, laboratory, scanner,
+seed-user integrity and cross-role data flow. These are local/demo tests rather
+than proof of production Firebase behavior.
 
----
-
-## 🔒 Branch Protection Best Practices
-
-To enforce these quality gates on GitHub:
-1. Navigate to **Settings** ➔ **Branches** ➔ **Branch protection rules**.
-2. Select your base branch (`main` or `master`).
-3. Enable:
-   - ✅ **Require a pull request before merging**
-   - ✅ **Require status checks to pass before merging**
-   - ✅ Select required status checks:
-     - `🔍 Static Analysis & Unit Tests`
-     - `🌐 Web Compilation & Chrome Execution`
-     - `🐳 Docker Multi-Stage Build & Container Smoke Test`
+Before merging, inspect all checks for the PR's latest commit, including the
+independent APK job, and confirm GitHub reports no merge conflicts with the
+current base branch. Branch-protection settings determine which checks and
+reviews are required; workflow files alone do not establish those settings.
+Do not treat skipped downstream jobs after a failed prerequisite as passing.
