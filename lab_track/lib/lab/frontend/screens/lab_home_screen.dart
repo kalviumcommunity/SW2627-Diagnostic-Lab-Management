@@ -700,22 +700,22 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
               Expanded(
                 flex: 3,
                 child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('DIAGNOSTIC TEST PANEL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textTertiary)),
-                  Text(sample.testNames.isNotEmpty ? sample.testNames.join(", ") : 'Diagnostic Assay', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                ],
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('DIAGNOSTIC TEST PANEL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textTertiary)),
+                    Text(sample.testNames.isNotEmpty ? sample.testNames.join(", ") : 'Diagnostic Assay', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                  ],
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 flex: 2,
                 child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const Text('TUBE TYPE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textTertiary)),
-                  Text(sample.tubeType, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-                ],
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text('TUBE TYPE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textTertiary)),
+                    Text(sample.tubeType, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                  ],
                 ),
               ),
             ],

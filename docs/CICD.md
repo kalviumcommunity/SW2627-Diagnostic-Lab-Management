@@ -25,13 +25,8 @@ PR, manual dispatch, and pushes to `main`, `master`, `Aryan-*`, `feat/*` and
 generates SDK paths in local.properties, resolves dependencies and runs:
 
 ```sh
-flutter build apk --release --android-skip-build-dependency-validation --no-shrink --verbose --no-shrink --verbose
+flutter build apk --release --android-skip-build-dependency-validation --no-shrink --verbose
 ```
-
-APK runs queue rather than cancel in progress, with a 45-minute job timeout
-and a 30-minute build timeout. The workflow writes signing fingerprints to the
-job summary. It omits the deprecated global `ndk.dir` so native plugins can resolve
-their declared NDK versions without conflicting with a forced directory.
 
 APK runs queue rather than cancel in progress, with a 45-minute job timeout
 and a 30-minute build timeout. The workflow writes signing fingerprints to the
