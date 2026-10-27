@@ -83,17 +83,7 @@ jobs:
           echo "### 🔑 Android Signing Fingerprints (Register in Firebase Console)" >> $GITHUB_STEP_SUMMARY
           echo "Add these under **Firebase Console → Project Settings → Android App (com.labtrack.lab_track)**:" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          if [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
-            keytool -printcert -jarfile build/app/outputs/flutter-apk/app-release.apk 2>/dev/null \
-              | grep -E "(Owner|SHA1|SHA256)" | tee -a $GITHUB_STEP_SUMMARY || true
-          fi
-          if [ -f ~/.android/debug.keystore ]; then
-            keytool -list -v \
-              -keystore ~/.android/debug.keystore \
-              -alias androiddebugkey \
-              -storepass android -keypass android 2>/dev/null \
-              | grep -E "(SHA1|SHA256)" | tee -a $GITHUB_STEP_SUMMARY || true
-          fi
+          cd android && ./gradlew signingReport | grep -E "(Variant|Config|Alias|SHA1|SHA-256)" | tee -a $GITHUB_STEP_SUMMARY || true
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: 📤 Upload APK Artifact

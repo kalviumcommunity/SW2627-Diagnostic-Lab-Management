@@ -35,10 +35,18 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        getByName("debug") {
+            val appKeystore = file("debug.keystore")
+            if (appKeystore.exists()) {
+                storeFile = appKeystore
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Signing with app/debug.keystore so CI/CD and local builds match Firebase fingerprints
             signingConfig = signingConfigs.getByName("debug")
         }
     }
