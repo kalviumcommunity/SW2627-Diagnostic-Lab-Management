@@ -152,8 +152,9 @@ class _PhlebotomistHomeScreenState extends State<PhlebotomistHomeScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _PhlebotomistDashboardTab extends StatelessWidget {
