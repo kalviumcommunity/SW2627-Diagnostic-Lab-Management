@@ -12,7 +12,20 @@
           "package_name": "com.labtrack.lab_track"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "939933930947-ejdd8ea7eiv06abqmqacjqot9cnfeg3q.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.labtrack.lab_track",
+            "certificate_hash": "7fe2a037cb81e7b5b704e2330d4809aea3cb5118"
+          }
+        },
+        {
+          "client_id": "939933930947-4iur7vn4a768l23frpfltscrndtpf09c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCSDu_444uJqEnmD1y-4p3lt5jXyPrPJT8"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "939933930947-4iur7vn4a768l23frpfltscrndtpf09c.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "939933930947-be7pa6tnqqv239s9foe0ki65kmdggd84.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.labtrack.labTrack"
+              }
+            }
+          ]
         }
       }
     }
