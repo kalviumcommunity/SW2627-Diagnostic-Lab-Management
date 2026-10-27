@@ -207,7 +207,7 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
         border: Border.all(color: AppColors.border),
         boxShadow: AppColors.softCardShadow,
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
