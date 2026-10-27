@@ -6,9 +6,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Remove cancel-in-progress — long NDK downloads were being killed by subsequent pushes.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -17,8 +18,10 @@ jobs:
   build-apk:
     name: 📱 Build Android Release APK
     runs-on: ubuntu-latest
+    timeout-minutes: 45          # hard ceiling so stale runs don't eat free minutes forever
     env:
-      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx3584m -XX:MaxMetaspaceSize=1024m -XX:ReservedCodeCacheSize=512m -Dfile.encoding=UTF-8"
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:ReservedCodeCacheSize=512m -Dfile.encoding=UTF-8"
+      ANDROID_NDK_VERSION: "27.0.12077973"   # pinned — avoids on-the-fly NDK install inside Gradle
     defaults:
       run:
         working-directory: lab_track
@@ -34,35 +37,67 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+      # ── Pre-install the NDK before Flutter/Gradle runs so Gradle never has to download it ──
+      - name: 🛠️ Pre-install Android NDK ${{ env.ANDROID_NDK_VERSION }}
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "ndk;${{ env.ANDROID_NDK_VERSION }}"
+
       - name: 🐦 Set up Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
 
+      # ── Cache pub packages so flutter pub get is instant on repeat runs ──
+      - name: 📦 Cache Flutter pub packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            lab_track/.dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('lab_track/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
       - name: 🔧 Grant Execute Permission for Gradlew
         run: chmod +x android/gradlew
 
-      - name: 🧹 Clean Environment & Stale Configurations
+      # ── Write local.properties so Flutter SDK path resolves inside settings.gradle.kts ──
+      - name: 📝 Generate local.properties
         run: |
-          rm -f android/local.properties
-          flutter clean
-          flutter pub get
+          echo "flutter.sdk=$(which flutter | sed 's|/bin/flutter||')" > android/local.properties
+          echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
+          echo "ndk.dir=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION" >> android/local.properties
+          cat android/local.properties
+
+      - name: 📦 Flutter pub get
+        run: flutter pub get
 
       - name: 🔨 Build Release APK
-        run: flutter build apk --release --android-skip-build-dependency-validation
+        run: |
+          flutter build apk \
+            --release \
+            --android-skip-build-dependency-validation \
+            --no-shrink \
+            --verbose
+        timeout-minutes: 30
 
       - name: 🔑 Output SHA-1 & SHA-256 Fingerprints for Firebase Console
         if: success()
         run: |
           echo "### 🔑 Android Signing Fingerprints (Register in Firebase Console)" >> $GITHUB_STEP_SUMMARY
-          echo "Add these fingerprints under **Firebase Console > Project Settings > Your Android App (com.labtrack.lab_track)**:" >> $GITHUB_STEP_SUMMARY
+          echo "Add these under **Firebase Console → Project Settings → Android App (com.labtrack.lab_track)**:" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           if [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
-            keytool -printcert -jarfile build/app/outputs/flutter-apk/app-release.apk 2>/dev/null | grep -E "(Owner|SHA1|SHA256)" | tee -a $GITHUB_STEP_SUMMARY || true
+            keytool -printcert -jarfile build/app/outputs/flutter-apk/app-release.apk 2>/dev/null \
+              | grep -E "(Owner|SHA1|SHA256)" | tee -a $GITHUB_STEP_SUMMARY || true
           fi
           if [ -f ~/.android/debug.keystore ]; then
-            keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android 2>/dev/null | grep -E "(SHA1|SHA256)" | tee -a $GITHUB_STEP_SUMMARY || true
+            keytool -list -v \
+              -keystore ~/.android/debug.keystore \
+              -alias androiddebugkey \
+              -storepass android -keypass android 2>/dev/null \
+              | grep -E "(SHA1|SHA256)" | tee -a $GITHUB_STEP_SUMMARY || true
           fi
           echo '```' >> $GITHUB_STEP_SUMMARY
 
@@ -73,4 +108,3 @@ jobs:
           path: lab_track/build/app/outputs/flutter-apk/*.apk
           retention-days: 14
           if-no-files-found: error
-
