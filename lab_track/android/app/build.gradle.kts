@@ -10,10 +10,8 @@ plugins {
 
 android {
     namespace = "com.labtrack.lab_track"
-    compileSdk = 36
-    // Pinned NDK version — must match ANDROID_NDK_VERSION in .github/workflows/build-apk.yml
-    // This prevents Gradle from downloading NDK on-the-fly during CI/CD builds.
-    ndkVersion = "27.0.12077973"
+    compileSdk = 35
+    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -26,7 +24,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 23
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 35
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
         // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
@@ -38,25 +36,33 @@ android {
     signingConfigs {
         create("release") {
             val cmKeystorePath = System.getenv("CM_KEYSTORE_PATH") ?: System.getenv("KEYSTORE_PATH")
-            if (cmKeystorePath != null && file(cmKeystorePath).exists()) {
-                storeFile = file(cmKeystorePath)
+            val customKeystore = cmKeystorePath?.let { file(it) }
+            val localKeystore = listOf(
+                file("debug.keystore"),
+                file("${project.projectDir}/debug.keystore"),
+                file("${project.rootDir}/app/debug.keystore")
+            ).firstOrNull { it.exists() }
+
+            if (customKeystore != null && customKeystore.exists()) {
+                storeFile = customKeystore
                 storePassword = System.getenv("CM_KEYSTORE_PASSWORD") ?: System.getenv("KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("CM_KEY_ALIAS") ?: System.getenv("KEY_ALIAS")
                 keyPassword = System.getenv("CM_KEY_PASSWORD") ?: System.getenv("KEY_PASSWORD")
-            } else {
-                val appKeystore = file("debug.keystore")
-                if (appKeystore.exists()) {
-                    storeFile = appKeystore
-                    storePassword = "android"
-                    keyAlias = "androiddebugkey"
-                    keyPassword = "android"
-                }
+            } else if (localKeystore != null) {
+                storeFile = localKeystore
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
             }
         }
         getByName("debug") {
-            val appKeystore = file("debug.keystore")
-            if (appKeystore.exists()) {
-                storeFile = appKeystore
+            val localKeystore = listOf(
+                file("debug.keystore"),
+                file("${project.projectDir}/debug.keystore"),
+                file("${project.rootDir}/app/debug.keystore")
+            ).firstOrNull { it.exists() }
+            if (localKeystore != null) {
+                storeFile = localKeystore
                 storePassword = "android"
                 keyAlias = "androiddebugkey"
                 keyPassword = "android"
