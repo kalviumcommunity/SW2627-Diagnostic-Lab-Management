@@ -9,6 +9,7 @@ import 'auth/frontend/screens/role_selection_screen.dart';
 import 'patient/frontend/providers/patient_provider.dart';
 import 'phlebotomist/frontend/providers/phlebotomist_provider.dart';
 import 'frontdesk/frontend/providers/frontdesk_provider.dart';
+import 'data/services/central_data_store.dart';
 import 'routing/role_router.dart';
 
 void main() async {
@@ -17,6 +18,7 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    CentralDataStore.instance.connectToFirestore();
   } catch (e) {
     debugPrint('Firebase initialization notice: $e');
   }
