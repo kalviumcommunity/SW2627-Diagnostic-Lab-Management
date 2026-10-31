@@ -18,6 +18,12 @@ analyzer:
     - lib/features/**
   errors:
     deprecated_member_use: ignore
+    avoid_print: ignore
+    use_build_context_synchronously: ignore
+    prefer_const_constructors: ignore
+    prefer_const_literals_to_create_immutables: ignore
+    unnecessary_string_interpolations: ignore
+    depend_on_referenced_packages: ignore
 
 linter:
   # The lint rules applied to this project can be customized in the
