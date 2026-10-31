@@ -36,18 +36,38 @@ android {
     }
 
     signingConfigs {
+        create("release") {
+            val cmKeystorePath = System.getenv("CM_KEYSTORE_PATH") ?: System.getenv("KEYSTORE_PATH")
+            if (cmKeystorePath != null && file(cmKeystorePath).exists()) {
+                storeFile = file(cmKeystorePath)
+                storePassword = System.getenv("CM_KEYSTORE_PASSWORD") ?: System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("CM_KEY_ALIAS") ?: System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("CM_KEY_PASSWORD") ?: System.getenv("KEY_PASSWORD")
+            } else {
+                val appKeystore = file("debug.keystore")
+                if (appKeystore.exists()) {
+                    storeFile = appKeystore
+                    storePassword = "android"
+                    keyAlias = "androiddebugkey"
+                    keyPassword = "android"
+                }
+            }
+        }
         getByName("debug") {
             val appKeystore = file("debug.keystore")
             if (appKeystore.exists()) {
                 storeFile = appKeystore
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
             }
         }
     }
 
     buildTypes {
         release {
-            // Signing with app/debug.keystore so CI/CD and local builds match Firebase fingerprints
-            signingConfig = signingConfigs.getByName("debug")
+            // Signs with Codemagic keystore if provided, or defaults to debug.keystore matching Firebase SHA-1
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

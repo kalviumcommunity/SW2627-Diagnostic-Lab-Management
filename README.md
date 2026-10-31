@@ -43,3 +43,11 @@ docker compose logs -f
 ```bash
 docker compose down
 ```
+
+---
+
+## CI/CD & Cloud Deployment with Codemagic
+
+The project is fully configured for automated cloud builds and deployment via **Codemagic**:
+- [`codemagic.yaml`](codemagic.yaml): Production CI/CD configuration building Android Release APK, App Bundle (AAB), and Web SPA.
+- [`docs/CODEMAGIC.md`](docs/CODEMAGIC.md): Complete setup guide for Codemagic, Firebase Authentication, and Google Sign-In certificate fingerprints.

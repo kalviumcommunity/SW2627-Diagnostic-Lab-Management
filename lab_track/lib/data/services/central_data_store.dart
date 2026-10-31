@@ -563,12 +563,32 @@ class CentralDataStore extends ChangeNotifier {
     _initFirestoreSync();
   }
 
-  void _initFirestoreSync() {
-    if (_firestoreSyncStarted) return;
-    _firestoreSyncStarted = true;
+  /// Explicitly triggers or verifies Cloud Firestore connection
+  void connectToFirestore() {
+    _initFirestoreSync();
+  }
+
+  FirebaseFirestore? _getOrInitFirestore() {
+    if (_firestore != null) return _firestore;
     try {
       _firestore = FirebaseFirestore.instance;
-      _subscribeToFirestoreCollections();
+      if (!_firestoreSyncStarted) {
+        _firestoreSyncStarted = true;
+        _subscribeToFirestoreCollections();
+      }
+      return _firestore;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  void _initFirestoreSync() {
+    try {
+      _firestore = FirebaseFirestore.instance;
+      if (!_firestoreSyncStarted) {
+        _firestoreSyncStarted = true;
+        _subscribeToFirestoreCollections();
+      }
     } catch (e) {
       debugPrint('CentralDataStore: Firestore running in offline mode ($e)');
     }
@@ -643,7 +663,7 @@ class CentralDataStore extends ChangeNotifier {
   }
 
   void _syncOrderToFirestore(OrderModel order) {
-    final fs = _firestore;
+    final fs = _getOrInitFirestore();
     if (fs == null) return;
     try {
       fs.collection('orders').doc(order.id).set(order.toMap(), SetOptions(merge: true)).catchError((e) {
@@ -655,19 +675,25 @@ class CentralDataStore extends ChangeNotifier {
   }
 
   void _syncSampleToFirestore(SampleModel sample) {
-    final fs = _firestore;
+    final fs = _getOrInitFirestore();
     if (fs == null) return;
     try {
       fs.collection('samples').doc(sample.barcode).set(sample.toMap(), SetOptions(merge: true)).catchError((e) {
         debugPrint('Firestore sample sync warning: $e');
       });
+      // Also sync milestone events to immutable sample_events collection
+      for (final event in sample.events) {
+        fs.collection('sample_events').doc(event.id).set(event.toMap(), SetOptions(merge: true)).catchError((e) {
+          debugPrint('Firestore sample event sync warning: $e');
+        });
+      }
     } catch (e) {
       debugPrint('Firestore sample sync error: $e');
     }
   }
 
   void _syncReportToFirestore(ReportModel report) {
-    final fs = _firestore;
+    final fs = _getOrInitFirestore();
     if (fs == null) return;
     try {
       fs.collection('reports').doc(report.id).set(report.toMap(), SetOptions(merge: true)).catchError((e) {

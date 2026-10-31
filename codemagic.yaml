@@ -1,0 +1,201 @@
+# ==============================================================================
+# Codemagic CI/CD Configuration for LabTrack (SW2627: Diagnostic Lab Management)
+# ==============================================================================
+# Full support for Firebase Authentication, Google Sign-In, and Cloud Firestore.
+# Documentation: https://docs.codemagic.io/yaml-basic-configuration/yaml-getting-started/
+# ==============================================================================
+
+workflows:
+  # ============================================================================
+  # 1. ANDROID WORKFLOW: Release APK & Android App Bundle (AAB)
+  # ============================================================================
+  android-workflow:
+    name: LabTrack Android (Release APK & AAB with Firebase)
+    max_build_duration: 60
+    instance_type: linux_x2
+    environment:
+      flutter: stable
+      java: 17
+      groups:
+        - firebase_config # Optional Codemagic UI environment group
+      vars:
+        PACKAGE_NAME: "com.labtrack.lab_track"
+        ANDROID_NDK_VERSION: "27.0.12077973"
+        GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:ReservedCodeCacheSize=512m -Dfile.encoding=UTF-8"
+    cache:
+      cache_paths:
+        - ~/.pub-cache
+        - ~/.gradle/caches
+        - ~/.gradle/wrapper
+    triggering:
+      events:
+        - push
+        - pull_request
+        - tag
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+          source: true
+        - pattern: 'master'
+          include: true
+          source: true
+        - pattern: 'feat/*'
+          include: true
+          source: true
+        - pattern: 'fix/*'
+          include: true
+          source: true
+      cancel_previous_builds: false
+
+    scripts:
+      - name: 🛠️ 1. Environment & Firebase Config Verification
+        script: |
+          set -e
+          cd lab_track
+          echo "=== Checking Android & Firebase Environment ==="
+          
+          # 1. Setup local.properties with correct SDK paths
+          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+          echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
+          cat android/local.properties
+
+          # 2. Decode google-services.json from environment variable if provided
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "Decoding google-services.json from GOOGLE_SERVICES_JSON environment variable..."
+            echo "$GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
+          elif [ -n "$ANDROID_FIREBASE_SECRET" ]; then
+            echo "Decoding google-services.json from ANDROID_FIREBASE_SECRET environment variable..."
+            echo "$ANDROID_FIREBASE_SECRET" | base64 --decode > android/app/google-services.json
+          elif [ -f "android/app/google-services.json" ]; then
+            echo "✅ Found committed android/app/google-services.json"
+          else
+            echo "❌ ERROR: google-services.json is missing!"
+            echo "Please add GOOGLE_SERVICES_JSON as a base64 environment variable in Codemagic."
+            exit 1
+          fi
+
+          # 3. Verify debug.keystore or decode custom release keystore
+          if [ -n "$CM_KEYSTORE" ]; then
+            echo "Writing custom keystore from Codemagic environment variable..."
+            echo "$CM_KEYSTORE" | base64 --decode > android/app/release.keystore
+            export CM_KEYSTORE_PATH="android/app/release.keystore"
+          elif [ -f "android/app/debug.keystore" ]; then
+            echo "✅ Using bundled debug.keystore matching Firebase certificate hash"
+          fi
+
+          # 4. Grant gradlew execution permissions
+          chmod +x android/gradlew
+
+      - name: 📦 2. Fetch Flutter Dependencies
+        script: |
+          set -e
+          cd lab_track
+          flutter --version
+          flutter pub get
+
+      - name: 🔍 3. Static Code Analysis
+        script: |
+          set -e
+          cd lab_track
+          flutter analyze --no-fatal-infos
+
+      - name: 🧪 4. Execute Automated Test Suite
+        script: |
+          set -e
+          cd lab_track
+          flutter test --coverage
+
+      - name: 📱 5. Build Android Release APK
+        script: |
+          set -e
+          cd lab_track
+          flutter build apk --release --android-skip-build-dependency-validation
+
+      - name: 📦 6. Build Android App Bundle (AAB)
+        script: |
+          set -e
+          cd lab_track
+          flutter build appbundle --release --android-skip-build-dependency-validation
+
+      - name: 🔑 7. Output Firebase SHA-1 & SHA-256 Fingerprints
+        script: |
+          cd lab_track/android
+          echo "=========================================================================="
+          echo "🔑 ANDROID SIGNING FINGERPRINTS (REQUIRED IN FIREBASE CONSOLE)"
+          echo "=========================================================================="
+          echo "For Google Auth to work seamlessly, ensure these SHA fingerprints are"
+          echo "added to your Firebase Project Settings:"
+          echo "👉 Firebase Console -> Project Settings -> General -> Your Android Apps"
+          echo "   App: com.labtrack.lab_track"
+          echo "--------------------------------------------------------------------------"
+          ./gradlew signingReport | grep -E "(Variant|Config|Alias|SHA1|SHA-256)" || true
+          echo "=========================================================================="
+
+    artifacts:
+      - lab_track/build/app/outputs/flutter-apk/*.apk
+      - lab_track/build/app/outputs/bundle/release/*.aab
+      - lab_track/build/**/outputs/**/mapping.txt
+
+    publishing:
+      email:
+        recipients:
+          - dev@labtrack.com
+        notify:
+          success: true
+          failure: true
+
+  # ============================================================================
+  # 2. WEB WORKFLOW: Production Web SPA Bundle (HTML5 / CanvasKit)
+  # ============================================================================
+  web-workflow:
+    name: LabTrack Web (Production SPA Bundle with Firebase)
+    max_build_duration: 30
+    instance_type: linux_x2
+    environment:
+      flutter: stable
+    cache:
+      cache_paths:
+        - ~/.pub-cache
+    triggering:
+      events:
+        - push
+        - pull_request
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+        - pattern: 'master'
+          include: true
+    scripts:
+      - name: 📦 1. Fetch Flutter Web Dependencies
+        script: |
+          set -e
+          cd lab_track
+          flutter --version
+          flutter pub get
+
+      - name: 🔍 2. Analyze Code
+        script: |
+          cd lab_track
+          flutter analyze --no-fatal-infos
+
+      - name: 🧪 3. Run Unit Tests
+        script: |
+          cd lab_track
+          flutter test
+
+      - name: 🌐 4. Build Flutter Web Release
+        script: |
+          set -e
+          cd lab_track
+          flutter build web --release --pwa-strategy=none
+
+    artifacts:
+      - lab_track/build/web/**
+
+    publishing:
+      email:
+        recipients:
+          - dev@labtrack.com
+        notify:
+          success: true
+          failure: true

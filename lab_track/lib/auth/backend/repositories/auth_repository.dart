@@ -153,10 +153,18 @@ class AuthRepository {
       return newUser;
     } on FirebaseAuthException catch (e) {
       debugPrint('Google Sign-In Auth Error: ${e.code} - ${e.message}');
-      if (e.code == 'popup-closed-by-user') {
-        throw Exception('Sign-in cancelled: popup closed before completing.');
+      if (e.code == 'popup-closed-by-user' || e.code == 'web-context-cancelled') {
+        throw Exception('Sign-in cancelled: browser was closed before completing authentication.');
       } else if (e.code == 'cancelled-popup-request') {
         throw Exception('Another sign-in popup is already open.');
+      } else if (e.code == 'operation-not-allowed') {
+        throw Exception('Google Sign-In is not enabled in Firebase Console. Enable it in Authentication > Sign-in method.');
+      } else if (e.code == 'network-request-failed') {
+        throw Exception('Network error: Unable to reach Firebase authentication servers. Check your internet connection.');
+      } else if (e.code == 'invalid-credential') {
+        throw Exception('Invalid Google credential. Verify that your Android signing certificate SHA-1 fingerprint is added to Firebase Console.');
+      } else if (e.code == 'account-exists-with-different-credential') {
+        throw Exception('An account already exists with this email using a different sign-in method.');
       }
       throw Exception(e.message ?? 'Google Sign-In failed (${e.code}).');
     } catch (e) {

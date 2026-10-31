@@ -183,6 +183,7 @@ class SampleModel {
       if (currentBranchName != null) 'currentBranchName': currentBranchName,
       if (assignedPhlebotomistName != null) 'assignedPhlebotomistName': assignedPhlebotomistName,
       if (notes != null) 'notes': notes,
+      if (events.isNotEmpty) 'events': events.map((e) => e.toMap()).toList(),
     };
   }
 
