@@ -2,6 +2,7 @@
 # Codemagic CI/CD Configuration for LabTrack (SW2627: Diagnostic Lab Management)
 # ==============================================================================
 # Full support for Firebase Authentication, Google Sign-In, and Cloud Firestore.
+# Configured for Codemagic Free Tier (mac_mini_m2 runner - 500 free minutes/month).
 # Documentation: https://docs.codemagic.io/yaml-basic-configuration/yaml-getting-started/
 # ==============================================================================
 
@@ -12,7 +13,7 @@ workflows:
   android-workflow:
     name: LabTrack Android (Release APK & AAB with Firebase)
     max_build_duration: 60
-    instance_type: linux_x2
+    instance_type: mac_mini_m2
     environment:
       flutter: stable
       java: 17
@@ -62,10 +63,10 @@ workflows:
           # 2. Decode google-services.json from environment variable if provided
           if [ -n "$GOOGLE_SERVICES_JSON" ]; then
             echo "Decoding google-services.json from GOOGLE_SERVICES_JSON environment variable..."
-            echo "$GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
+            python3 -c "import base64, sys, os; open('android/app/google-services.json', 'wb').write(base64.b64decode(os.environ['GOOGLE_SERVICES_JSON']))"
           elif [ -n "$ANDROID_FIREBASE_SECRET" ]; then
             echo "Decoding google-services.json from ANDROID_FIREBASE_SECRET environment variable..."
-            echo "$ANDROID_FIREBASE_SECRET" | base64 --decode > android/app/google-services.json
+            python3 -c "import base64, sys, os; open('android/app/google-services.json', 'wb').write(base64.b64decode(os.environ['ANDROID_FIREBASE_SECRET']))"
           elif [ -f "android/app/google-services.json" ]; then
             echo "✅ Found committed android/app/google-services.json"
           else
@@ -77,7 +78,7 @@ workflows:
           # 3. Verify debug.keystore or decode custom release keystore
           if [ -n "$CM_KEYSTORE" ]; then
             echo "Writing custom keystore from Codemagic environment variable..."
-            echo "$CM_KEYSTORE" | base64 --decode > android/app/release.keystore
+            python3 -c "import base64, sys, os; open('android/app/release.keystore', 'wb').write(base64.b64decode(os.environ['CM_KEYSTORE']))"
             export CM_KEYSTORE_PATH="android/app/release.keystore"
           elif [ -f "android/app/debug.keystore" ]; then
             echo "✅ Using bundled debug.keystore matching Firebase certificate hash"
@@ -150,7 +151,7 @@ workflows:
   web-workflow:
     name: LabTrack Web (Production SPA Bundle with Firebase)
     max_build_duration: 30
-    instance_type: linux_x2
+    instance_type: mac_mini_m2
     environment:
       flutter: stable
     cache:
