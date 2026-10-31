@@ -75,7 +75,18 @@ workflows:
             echo "✅ Using bundled debug.keystore matching Firebase certificate hash"
           fi
 
-          # 4. Grant gradlew execution permissions
+          # 4. Accept all Android SDK licenses automatically
+          echo "Accepting Android SDK licenses..."
+          yes | flutter doctor --android-licenses || true
+          if [ -d "$ANDROID_HOME/cmdline-tools/latest/bin" ]; then
+            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+          elif [ -d "$ANDROID_HOME/tools/bin" ]; then
+            yes | "$ANDROID_HOME/tools/bin/sdkmanager" --licenses || true
+          elif command -v sdkmanager &> /dev/null; then
+            yes | sdkmanager --licenses || true
+          fi
+
+          # 5. Grant gradlew execution permissions
           chmod +x android/gradlew
 
       - name: 📦 2. Fetch Flutter Dependencies
