@@ -75,15 +75,34 @@ workflows:
             echo "✅ Using bundled debug.keystore matching Firebase certificate hash"
           fi
 
-          # 4. Accept all Android SDK licenses automatically
-          echo "Accepting Android SDK licenses..."
+          # 4. Accept all Android SDK licenses and ensure Platform 36 is installed
+          echo "=== Configuring Android SDK Licenses & Platform 36 ==="
+          mkdir -p "$ANDROID_HOME/licenses" 2>/dev/null || true
+          printf "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63c6825ea9c5514f83c2829b004d1fee\n84831b9409646a918e30573bab4c9c91346d8abd\n" > "$ANDROID_HOME/licenses/android-sdk-license" 2>/dev/null || true
+          printf "84831b9409646a918e30573bab4c9c91346d8abd\n7995fd09952d8615d77e69b6024141d143c6b299\n" > "$ANDROID_HOME/licenses/android-sdk-preview-license" 2>/dev/null || true
+
+          if [ -d "/usr/local/share/android-sdk" ]; then
+            mkdir -p "/usr/local/share/android-sdk/licenses" 2>/dev/null || true
+            printf "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63c6825ea9c5514f83c2829b004d1fee\n84831b9409646a918e30573bab4c9c91346d8abd\n" > "/usr/local/share/android-sdk/licenses/android-sdk-license" 2>/dev/null || true
+            printf "84831b9409646a918e30573bab4c9c91346d8abd\n7995fd09952d8615d77e69b6024141d143c6b299\n" > "/usr/local/share/android-sdk/licenses/android-sdk-preview-license" 2>/dev/null || true
+          fi
+
+          echo "Accepting Android SDK licenses via SDK manager..."
           yes | flutter doctor --android-licenses || true
-          if [ -d "$ANDROID_HOME/cmdline-tools/latest/bin" ]; then
-            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
-          elif [ -d "$ANDROID_HOME/tools/bin" ]; then
-            yes | "$ANDROID_HOME/tools/bin/sdkmanager" --licenses || true
+
+          SDK_MGR=""
+          if [ -f "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+            SDK_MGR="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          elif [ -f "$ANDROID_HOME/tools/bin/sdkmanager" ]; then
+            SDK_MGR="$ANDROID_HOME/tools/bin/sdkmanager"
           elif command -v sdkmanager &> /dev/null; then
-            yes | sdkmanager --licenses || true
+            SDK_MGR="sdkmanager"
+          fi
+
+          if [ -n "$SDK_MGR" ]; then
+            yes | "$SDK_MGR" --licenses || true
+            echo "Ensuring Android SDK Platform 36 and Build-Tools 35 are installed..."
+            "$SDK_MGR" "platforms;android-36" "build-tools;35.0.0" || true
           fi
 
           # 5. Grant gradlew execution permissions
