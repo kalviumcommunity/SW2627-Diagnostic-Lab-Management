@@ -89,7 +89,7 @@ If deploying the Web build:
 ## 4. Codemagic Workflows Overview
 
 ### 📱 `android-workflow`
-- **Instance**: Linux VM (`linux_x2`)
+- **Instance**: Mac mini M2 (`mac_mini_m2`) — *500 free build minutes/month on Codemagic Free Tier*
 - **Environment**: Flutter `stable`, Java `17`, Android NDK `27.0.12077973`
 - **Build Steps**:
   1. Sets up `local.properties` and verifies `google-services.json`.
@@ -102,7 +102,7 @@ If deploying the Web build:
 - **Artifacts Generated**: Direct download link in Codemagic UI for both APK and AAB.
 
 ### 🌐 `web-workflow`
-- **Instance**: Linux VM (`linux_x2`)
+- **Instance**: Mac mini M2 (`mac_mini_m2`) — *Free Tier compatible*
 - **Build Steps**:
   1. Runs `flutter pub get`.
   2. Executes `flutter analyze` and tests.
