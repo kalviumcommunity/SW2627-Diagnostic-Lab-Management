@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.labtrack.lab_track"
-    compileSdk = 36
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
