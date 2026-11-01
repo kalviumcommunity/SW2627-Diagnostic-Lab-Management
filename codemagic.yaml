@@ -95,6 +95,7 @@ workflows:
           set -e
           cd lab_track
           flutter --version
+          flutter clean
           flutter pub get
 
       # -----------------------------------------------------------------------
@@ -173,6 +174,7 @@ workflows:
           set -e
           cd lab_track
           flutter --version
+          flutter clean
           flutter pub get
 
       - name: Analyze Code
