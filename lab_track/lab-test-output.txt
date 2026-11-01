@@ -1,0 +1,109 @@
+00:00 +0: loading A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/lab_test.dart
+00:00 +0: LabService Unit Tests LabService seeds specimen racks, connected analyzers, and diagnostic reports
+00:00 +1: LabService Unit Tests LabService accessions incoming vial and assigns to analyzer rack
+00:01 +2: LabService Unit Tests LabService records pre-analytical QC rejection with recollection trigger
+00:01 +3: LabService Unit Tests LabService saves test findings and pathologist authorizes report
+00:02 +3 -1: LabService Unit Tests LabService saves test findings and pathologist authorizes report [E]
+  Expected: SampleStatus:<SampleStatus.reportReady>
+    Actual: SampleStatus:<SampleStatus.processing>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\lab_test.dart 102:7                            main.<fn>.<fn>
+  
+00:02 +3 -1: LabProvider State Tests LabProvider initializes and filters specimens correctly
+00:02 +4 -1: LabHomeScreen Widget Tests Renders LabHomeScreen with KPI bar, quick accession bar, and tab navigation
+══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞═════════════════════════════════════════════════════════
+The following assertion was thrown during layout:
+A RenderFlex overflowed by 90 pixels on the right.
+
+The overflowing RenderFlex has an orientation of Axis.horizontal.
+The edge of the RenderFlex that is overflowing has been marked in the rendering with a yellow and
+black striped pattern. This is usually caused by the contents being too big for the RenderFlex.
+Consider applying a flex factor (e.g. using an Expanded widget) to force the children of the
+RenderFlex to fit within the available space instead of being sized to their natural size.
+This is considered an error condition because it indicates that there is content that cannot be
+seen. If the content is legitimately bigger than the available space, consider clipping it with a
+ClipRect widget before putting it in the flex, or using a scrollable container rather than a Flex,
+like a ListView.
+The specific RenderFlex in question is: RenderFlex#77770 DISPOSED OVERFLOWING:
+  creator: MultiChildRenderObjectElement#8a01f(DEFUNCT) ← MultiChildRenderObjectElement#1e258(DEFUNCT)
+    ← SingleChildRenderObjectElement#50ede(DEFUNCT) ← SingleChildRenderObjectElement#9acf3(DEFUNCT) ←
+    StatelessElement#49db2(DEFUNCT) ← SingleChildRenderObjectElement#93245(DEFUNCT) ←
+    SingleChildRenderObjectElement#a4afb(DEFUNCT) ← StatefulElement#e3c2f(DEFUNCT) ←
+    _NotificationElement<KeepAliveNotification>#01d95(DEFUNCT) ←
+    ParentDataElement<KeepAliveParentDataMixin>#54a95(DEFUNCT) ← StatefulElement#f207f(DEFUNCT) ←
+    StatelessElement#db8d7(DEFUNCT) ← ⋯
+  parentData: offset=Offset(0.0, 69.0); flex=null; fit=null (can use size)
+  constraints: BoxConstraints(w=734.0, 0.0<=h<=Infinity)
+  size: Size(734.0, 33.0)
+  direction: horizontal
+  mainAxisAlignment: start
+  mainAxisSize: max
+  crossAxisAlignment: center
+  textDirection: ltr
+  verticalDirection: down
+  spacing: 0.0
+◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:05 +4 -2: LabHomeScreen Widget Tests Renders LabHomeScreen with KPI bar, quick accession bar, and tab navigation [E]
+  Test failed. See exception logs above.
+  The test description was: Renders LabHomeScreen with KPI bar, quick accession bar, and tab navigation
+  
+══╡ EXCEPTION CAUGHT BY WIDGET INSPECTOR ╞══════════════════════════════════════════════════════════
+The following assertion was thrown:
+Looking up a deactivated widget's ancestor is unsafe.
+At this point the state of the widget's element tree is no longer stable.
+To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by
+calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.
+
+When the exception was thrown, this was the stack:
+#0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:5062:9)
+#1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:5076:6)
+#2      Element.visitAncestorElements (package:flutter/src/widgets/framework.dart:5187:12)
+#3      _describeRelevantUserCode (package:flutter/src/widgets/widget_inspector.dart:4342:13)
+#4      _parseDiagnosticsNode (package:flutter/src/widgets/widget_inspector.dart:4261:12)
+#5      debugTransformDebugCreator (package:flutter/src/widgets/widget_inspector.dart:4240:21)
+#6      _FlutterErrorDetailsNode.builder (package:flutter/src/foundation/assertions.dart:1300:31)
+#7      DiagnosticableNode.getProperties (package:flutter/src/foundation/diagnostics.dart:2943:68)
+#8      TextTreeRenderer._debugRender (package:flutter/src/foundation/diagnostics.dart:1270:63)
+#9      TextTreeRenderer.render (package:flutter/src/foundation/diagnostics.dart:1137:14)
+#10     FlutterError.dumpErrorToConsole (package:flutter/src/foundation/assertions.dart:1030:13)
+#11     _defaultTestExceptionReporter (package:flutter_test/src/test_exception_reporter.dart:29:16)
+#12     TestWidgetsFlutterBinding._createTestCompletionHandler.<anonymous closure> (package:flutter_test/src/binding.dart:1714:28)
+<asynchronous suspension>
+(elided 8 frames from dart:async and package:stack_trace)
+
+This exception was caught while trying to describe the user-relevant code of another error.
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══╡ EXCEPTION CAUGHT BY WIDGET INSPECTOR ╞══════════════════════════════════════════════════════════
+The following assertion was thrown:
+Looking up a deactivated widget's ancestor is unsafe.
+At this point the state of the widget's element tree is no longer stable.
+To safely refer to a widget's ancestor in its dispose() method, save a reference to the ancestor by
+calling dependOnInheritedWidgetOfExactType() in the widget's didChangeDependencies() method.
+
+When the exception was thrown, this was the stack:
+#0      Element._debugCheckStateIsActiveForAncestorLookup.<anonymous closure> (package:flutter/src/widgets/framework.dart:5062:9)
+#1      Element._debugCheckStateIsActiveForAncestorLookup (package:flutter/src/widgets/framework.dart:5076:6)
+#2      Element.visitAncestorElements (package:flutter/src/widgets/framework.dart:5187:12)
+#3      _describeRelevantUserCode (package:flutter/src/widgets/widget_inspector.dart:4342:13)
+#4      _parseDiagnosticsNode (package:flutter/src/widgets/widget_inspector.dart:4261:12)
+#5      debugTransformDebugCreator (package:flutter/src/widgets/widget_inspector.dart:4240:21)
+#6      _FlutterErrorDetailsNode.builder (package:flutter/src/foundation/assertions.dart:1300:31)
+#7      DiagnosticableNode.emptyBodyDescription (package:flutter/src/foundation/diagnostics.dart:2939:45)
+#8      TextTreeRenderer._debugRender (package:flutter/src/foundation/diagnostics.dart:1307:14)
+#9      TextTreeRenderer.render (package:flutter/src/foundation/diagnostics.dart:1137:14)
+#10     FlutterError.dumpErrorToConsole (package:flutter/src/foundation/assertions.dart:1030:13)
+#11     _defaultTestExceptionReporter (package:flutter_test/src/test_exception_reporter.dart:29:16)
+#12     TestWidgetsFlutterBinding._createTestCompletionHandler.<anonymous closure> (package:flutter_test/src/binding.dart:1714:28)
+<asynchronous suspension>
+(elided 8 frames from dart:async and package:stack_trace)
+
+This exception was caught while trying to describe the user-relevant code of another error.
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:05 +4 -2: Some tests failed.
+
+Failing tests:
+  A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/lab_test.dart: LabHomeScreen Widget Tests Renders LabHomeScreen with KPI bar, quick accession bar, and tab navigation
+  A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/lab_test.dart: LabService Unit Tests LabService saves test findings and pathologist authorizes report

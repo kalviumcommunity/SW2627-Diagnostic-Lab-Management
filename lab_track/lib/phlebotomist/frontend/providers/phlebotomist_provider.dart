@@ -6,6 +6,7 @@ import '../../backend/models/phlebotomist_collection_request.dart';
 import '../../backend/repositories/phlebotomist_repository.dart';
 
 import '../../../data/services/central_data_store.dart';
+import '../../../config/app_mode.dart';
 
 /// State management for the Field Phlebotomist App (pickups, route, barcode scanning, cold-chain).
 class PhlebotomistProvider extends ChangeNotifier {
@@ -23,15 +24,25 @@ class PhlebotomistProvider extends ChangeNotifier {
   List<OrderModel> _orders = [];
   List<SampleModel> _collectedSamples = [];
   OrderModel? _selectedOrder;
+  String? _phlebotomistId;
 
   PhlebotomistProvider({PhlebotomistRepository? repository})
       : _repository = repository ?? PhlebotomistRepository() {
-    refreshPickups('PH-204');
     CentralDataStore.instance.addListener(_onStoreChanged);
+    if (isDemoMode) setPhlebotomist('PH-204');
+  }
+
+  void setPhlebotomist(String? id) {
+    if (_phlebotomistId == id) return;
+    _phlebotomistId = id;
+    _orders = [];
+    _collectedSamples = [];
+    _selectedOrder = null;
+    if (id != null) refreshPickups(id);
   }
 
   void _onStoreChanged() {
-    refreshPickups('PH-204');
+    if (_phlebotomistId != null) refreshPickups(_phlebotomistId!);
   }
 
   @override
@@ -125,7 +136,7 @@ class PhlebotomistProvider extends ChangeNotifier {
   void updateColdBoxTemp(double temp) {
     _coldBoxTemp = temp;
     _repository.logColdBoxTemperature(
-      phlebotomistId: 'PH-204',
+      phlebotomistId: _phlebotomistId ?? '',
       temperature: temp,
       notes: 'Cold box temperature calibrated.',
     );

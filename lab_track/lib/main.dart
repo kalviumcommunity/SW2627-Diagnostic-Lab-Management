@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'config/firebase_options.dart';
+import 'config/app_mode.dart';
 import 'shared/theme/app_theme.dart';
 import 'auth/frontend/providers/auth_provider.dart';
 import 'auth/frontend/screens/role_selection_screen.dart';
@@ -15,10 +16,12 @@ import 'routing/role_router.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
+    if (!isDemoMode) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
     CentralDataStore.instance.connectToFirestore();
+    }
   } catch (e) {
     debugPrint('Firebase initialization notice: $e');
   }
@@ -27,8 +30,14 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => PatientProvider()),
-        ChangeNotifierProvider(create: (_) => PhlebotomistProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, PatientProvider>(
+          create: (_) => PatientProvider(),
+          update: (_, auth, patient) => patient!..setPatient(auth.currentUser?.id),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, PhlebotomistProvider>(
+          create: (_) => PhlebotomistProvider(),
+          update: (_, auth, collector) => collector!..setPhlebotomist(auth.currentUser?.id),
+        ),
         ChangeNotifierProvider(create: (_) => FrontDeskProvider()),
       ],
       child: const LabTrackApp(),
@@ -47,6 +56,9 @@ class LabTrackApp extends StatelessWidget {
       title: 'LabTrack - Diagnostic Lab Management',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      builder: (context, child) => isDemoMode
+          ? Banner(message: 'DEMO', location: BannerLocation.topEnd, child: child!)
+          : child!,
       home: authProvider.isAuthenticated
           ? RoleRouter.getHomeScreenForRole(authProvider.currentUser?.role)
           : const RoleSelectionScreen(),

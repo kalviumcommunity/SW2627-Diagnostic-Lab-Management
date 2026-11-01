@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
+import '../../config/app_mode.dart';
 import '../../admin/backend/models/sla_metric_model.dart';
 import '../../data/models/branch_model.dart';
 import '../../data/models/order_model.dart';
@@ -60,6 +62,8 @@ class CentralDataStore extends ChangeNotifier {
   void _ensureInitialized() {
     if (_initialized) return;
     _initialized = true;
+    // Synthetic fixtures must never be mixed with a live data source.
+    if (!isDemoMode) return;
 
     final now = DateTime.now();
 
@@ -569,6 +573,7 @@ class CentralDataStore extends ChangeNotifier {
   }
 
   FirebaseFirestore? _getOrInitFirestore() {
+    if (isDemoMode) return null;
     if (_firestore != null) return _firestore;
     try {
       _firestore = FirebaseFirestore.instance;
@@ -583,6 +588,7 @@ class CentralDataStore extends ChangeNotifier {
   }
 
   void _initFirestoreSync() {
+    if (isDemoMode) return;
     try {
       _firestore = FirebaseFirestore.instance;
       if (!_firestoreSyncStarted) {
@@ -751,6 +757,12 @@ class CentralDataStore extends ChangeNotifier {
 
     // 1. Update Order
     final oIdx = _orders.indexWhere((o) => o.id == orderId);
+    if (oIdx == -1) throw Exception('Order not found.');
+    final existingSample = getSample(sampleBarcode);
+    if (existingSample != null &&
+        (existingSample.orderId != orderId || existingSample.status != SampleStatus.booked)) {
+      throw Exception('Barcode is already assigned to another sample.');
+    }
     if (oIdx != -1) {
       final existing = _orders[oIdx];
       final barcodes = List<String>.from(existing.sampleBarcodes);
@@ -874,6 +886,12 @@ class CentralDataStore extends ChangeNotifier {
   }) {
     final now = DateTime.now();
     final sIdx = _samples.indexWhere((s) => s.barcode.toUpperCase() == barcode.toUpperCase());
+    if (sIdx == -1) throw Exception('Sample not found.');
+    if (_samples[sIdx].status == SampleStatus.rejected ||
+        _samples[sIdx].status == SampleStatus.reportReady ||
+        _samples[sIdx].status == SampleStatus.delivered) {
+      throw Exception('This sample cannot be accessioned.');
+    }
 
     final milestone = SampleEventModel(
       id: 'EV-ACC-$barcode-${now.millisecondsSinceEpoch}',
@@ -884,7 +902,7 @@ class CentralDataStore extends ChangeNotifier {
       actorRole: UserRole.labTechnician,
       timestamp: now,
       branchId: 'Apex Central Reference Laboratory',
-      temperatureC: 4.0,
+      temperatureC: sIdx == -1 ? null : _samples[sIdx].temperatureC,
       note: notes ?? 'Accessioned into Central Lab. Barcode verified.',
     );
 
@@ -897,7 +915,7 @@ class CentralDataStore extends ChangeNotifier {
         currentCustodianRole: 'Lab Technician',
         currentBranchId: 'branch-apex-hq',
         currentBranchName: 'Apex Central Reference Laboratory',
-        temperatureC: 4.0,
+        temperatureC: s.temperatureC,
         notes: notes ?? s.notes,
         events: events,
         lastEventAt: now,
@@ -919,6 +937,19 @@ class CentralDataStore extends ChangeNotifier {
   }) {
     final now = DateTime.now();
     final sIdx = _samples.indexWhere((s) => s.barcode.toUpperCase() == barcode.toUpperCase());
+    final rIdx = _racks.indexWhere((r) => r.id == rackId);
+    if (sIdx == -1 || rIdx == -1) throw Exception('Sample or rack not found.');
+    if (_samples[sIdx].status != SampleStatus.receivedAtLab &&
+        _samples[sIdx].status != SampleStatus.processing) {
+      throw Exception('Only accessioned samples can be assigned to a rack.');
+    }
+    if (!_racks[rIdx].sampleBarcodes.contains(barcode.toUpperCase()) &&
+        _racks[rIdx].sampleBarcodes.length >= _racks[rIdx].capacity) {
+      throw Exception('Rack is full.');
+    }
+    if (_racks.any((rack) => rack.id != rackId && rack.sampleBarcodes.contains(barcode.toUpperCase()))) {
+      throw Exception('Sample is already assigned to another rack.');
+    }
     if (sIdx != -1) {
       final s = _samples[sIdx];
       final milestone = SampleEventModel(
@@ -941,7 +972,6 @@ class CentralDataStore extends ChangeNotifier {
       _syncSampleToFirestore(_samples[sIdx]);
     }
 
-    final rIdx = _racks.indexWhere((r) => r.id == rackId);
     if (rIdx != -1) {
       final rack = _racks[rIdx];
       if (!rack.sampleBarcodes.contains(barcode.toUpperCase())) {
@@ -965,20 +995,11 @@ class CentralDataStore extends ChangeNotifier {
   }) {
     final now = DateTime.now();
     final sIdx = _samples.indexWhere((s) => s.barcode.toUpperCase() == sampleBarcode.toUpperCase());
-    var sample = sIdx != -1 ? _samples[sIdx] : null;
-    if (sample == null) {
-      sample = SampleModel(
-        barcode: sampleBarcode.toUpperCase(),
-        orderId: 'ORD-LAB-${now.millisecondsSinceEpoch}',
-        patientId: 'PT-UNKNOWN',
-        patientName: 'Patient',
-        currentBranchId: 'branch-apex-hq',
-        currentBranchName: 'Apex Central Reference Laboratory',
-        status: SampleStatus.receivedAtLab,
-        testNames: testName == null ? const [] : [testName],
-        createdAt: now,
-      );
-      _samples.insert(0, sample);
+    if (sIdx == -1) throw Exception('Sample not found.');
+    final sample = _samples[sIdx];
+    if (sample.status == SampleStatus.rejected) throw Exception('Rejected samples cannot be reported.');
+    if (parameters.isEmpty || parameters.any((p) => p.name.trim().isEmpty || p.value.trim().isEmpty)) {
+      throw Exception('Each result needs a parameter name and measured value.');
     }
 
     final effectiveTestName = testName ?? (sample.testNames.isNotEmpty ? sample.testNames.first : 'Diagnostic Panel');
@@ -986,7 +1007,7 @@ class CentralDataStore extends ChangeNotifier {
     final patientName = sample.patientName;
     final orderId = sample.orderId;
 
-    final rIdx = _reports.indexWhere((r) => r.sampleBarcode.toUpperCase() == sampleBarcode.toUpperCase());
+    final rIdx = _reports.indexWhere((r) => r.sampleBarcode.toUpperCase() == sampleBarcode.toUpperCase() && r.testName == effectiveTestName);
     if (rIdx != -1) {
       final existing = _reports[rIdx];
       final updated = ReportModel(
@@ -1043,6 +1064,11 @@ class CentralDataStore extends ChangeNotifier {
     }
 
     final rep = _reports[rIdx];
+    final sample = getSample(rep.sampleBarcode);
+    if (sample == null || sample.status == SampleStatus.rejected) {
+      throw Exception('A rejected or missing sample cannot be authorized.');
+    }
+    if (pathologistName.trim().isEmpty) throw Exception('A verifier name is required.');
     final verified = ReportModel(
       id: rep.id,
       orderId: rep.orderId,
@@ -1064,7 +1090,9 @@ class CentralDataStore extends ChangeNotifier {
 
     // Transition Sample to reportReady
     final sIdx = _samples.indexWhere((s) => s.barcode.toUpperCase() == rep.sampleBarcode.toUpperCase());
-    if (sIdx != -1) {
+    if (sIdx != -1 && _samples[sIdx].testNames.every((name) =>
+        _reports.any((report) => report.sampleBarcode.toUpperCase() == rep.sampleBarcode.toUpperCase() &&
+            report.testName == name && report.isReady))) {
       final s = _samples[sIdx];
       final milestone = SampleEventModel(
         id: 'EV-SIGN-${rep.sampleBarcode}-${now.millisecondsSinceEpoch}',
@@ -1088,7 +1116,8 @@ class CentralDataStore extends ChangeNotifier {
 
     // Transition Order to completed
     final oIdx = _orders.indexWhere((o) => o.id == rep.orderId);
-    if (oIdx != -1) {
+    if (oIdx != -1 && _orders[oIdx].sampleBarcodes.every((barcode) =>
+        _samples.any((sample) => sample.barcode.toUpperCase() == barcode.toUpperCase() && sample.status == SampleStatus.reportReady))) {
       _orders[oIdx] = _orders[oIdx].copyWith(status: OrderStatus.completed);
       _syncOrderToFirestore(_orders[oIdx]);
     }
@@ -1109,6 +1138,13 @@ class CentralDataStore extends ChangeNotifier {
     String testName = 'Diagnostic Panel';
 
     final sIdx = _samples.indexWhere((s) => s.barcode.toUpperCase() == barcode.toUpperCase());
+    if (sIdx == -1) throw Exception('Sample not found.');
+    if (_samples[sIdx].status == SampleStatus.rejected ||
+        _samples[sIdx].status == SampleStatus.reportReady ||
+        _samples[sIdx].status == SampleStatus.delivered) {
+      throw Exception('This sample cannot be rejected.');
+    }
+    final originalOrder = getOrder(_samples[sIdx].orderId);
     if (sIdx != -1) {
       final s = _samples[sIdx];
       patientName = s.patientName;
@@ -1151,26 +1187,25 @@ class CentralDataStore extends ChangeNotifier {
 
     // Create automatic recollection pickup order for phlebotomist & front desk
     final recollectionOrder = OrderModel(
-      id: 'ORD-REC-${now.millisecondsSinceEpoch.toString().substring(7)}',
+      id: 'ORD-REC-${const Uuid().v4().replaceAll('-', '').toUpperCase()}',
       patientId: sIdx != -1 ? _samples[sIdx].patientId : 'PT-REC',
       patientName: patientName,
       patientPhone: sIdx != -1 ? _samples[sIdx].patientPhone : '',
-      collectionAddress: 'Patient Home (Priority Recollection)',
-      testNames: [testName],
+      collectionAddress: originalOrder?.collectionAddress ?? '',
+      testNames: _samples[sIdx].testNames,
       totalAmount: 0.0, // Free recollection due to lab QC
       scheduledDate: now.add(const Duration(hours: 2)),
       timeSlot: 'STAT RECOLLECTION: $rejectionReason',
-      branchId: 'branch-spoke-01',
-      branchName: 'Downtown Spoke Center #1',
+      branchId: originalOrder?.branchId ?? '',
+      branchName: originalOrder?.branchName ?? '',
       status: OrderStatus.inProgress,
-      sampleBarcodes: ['SMP-REC-${now.millisecondsSinceEpoch.toString().substring(8)}'],
-      assignedPhlebotomistId: 'PH-204',
-      assignedPhlebotomistName: 'Rahul Verma',
+      sampleBarcodes: ['SMP-${const Uuid().v4().replaceAll('-', '').toUpperCase()}'],
+      assignedPhlebotomistId: originalOrder?.assignedPhlebotomistId,
+      assignedPhlebotomistName: originalOrder?.assignedPhlebotomistName,
       specialInstructions: 'STAT RE-DRAW: Previous specimen failed QC ($rejectionReason).',
       createdAt: now,
     );
-    _orders.insert(0, recollectionOrder);
-    _syncOrderToFirestore(recollectionOrder);
+    createOrder(recollectionOrder);
 
     notifyListeners();
     return qc;

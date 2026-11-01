@@ -123,7 +123,7 @@ class CollectConfirmScreen extends StatelessWidget {
                         ),
                         SizedBox(height: 2),
                         Text(
-                          'GPS coordinates, timestamp & cold box status committed to tracking ledger.',
+                          'Collection details recorded for this session.',
                           style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                         ),
                       ],

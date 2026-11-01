@@ -3,6 +3,7 @@ import '../../../data/models/sample_model.dart';
 import '../../../data/models/sample_event_model.dart';
 import '../../../data/models/report_model.dart';
 import '../../../data/services/central_data_store.dart';
+import 'package:uuid/uuid.dart';
 import '../../../domain/enums/order_status.dart';
 import '../../../domain/enums/sample_status.dart';
 import '../../../domain/enums/user_role.dart';
@@ -151,7 +152,7 @@ class FrontDeskService {
     await Future.delayed(const Duration(milliseconds: 250));
 
     final now = DateTime.now();
-    final randomSuffix = (1000 + now.millisecond + _orderStore.length * 10).toString();
+    final randomSuffix = const Uuid().v4().replaceAll('-', '').toUpperCase();
     final orderId = 'ORD-FD-$randomSuffix';
 
     // Clinical Tube Allocation Logic based on selected panels
@@ -173,11 +174,9 @@ class FrontDeskService {
     final List<SampleModel> newSamples = [];
     final List<ThermalLabelModel> newLabels = [];
 
-    int barcodeIndex = 1;
     tubeAllocation.forEach((vialType, testsForVial) {
-      final barcode = 'SMP-${10000 + _sampleStore.length + barcodeIndex}';
+      final barcode = 'SMP-${const Uuid().v4().replaceAll('-', '').toUpperCase()}';
       generatedBarcodes.add(barcode);
-      barcodeIndex++;
 
       int colorValue = 0xFF7E22CE; // purple
       String vol = '3.0 mL';

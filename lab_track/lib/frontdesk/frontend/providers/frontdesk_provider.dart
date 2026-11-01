@@ -122,28 +122,9 @@ class FrontDeskProvider extends ChangeNotifier {
   }
 
   Future<bool> printThermalLabels(List<ThermalLabelModel> labels) async {
-    if (labels.isEmpty) return false;
-
-    _isPrinting = true;
-    _errorMessage = null;
-    _successMessage = null;
+    _errorMessage = 'Thermal printing is not available in this build.';
     notifyListeners();
-
-    try {
-      // Simulate thermal print spooling
-      await Future.delayed(const Duration(milliseconds: 700));
-      final barcodes = labels.map((l) => l.barcode).toList();
-      await _repository.markLabelsPrinted(barcodes);
-      _recentLabels = _repository.getRecentThermalLabels();
-      _successMessage = 'Successfully dispatched ${labels.length} barcode stickers to Thermal Printer!';
-      return true;
-    } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
-      return false;
-    } finally {
-      _isPrinting = false;
-      notifyListeners();
-    }
+    return false;
   }
 
   Future<bool> printRequisitionSlip(OrderModel order) async {
@@ -153,9 +134,8 @@ class FrontDeskProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await Future.delayed(const Duration(milliseconds: 600));
-      _successMessage = 'Patient receipt slip printed for Order #${order.id}!';
-      return true;
+      _errorMessage = 'Receipt printing is not available in this build.';
+      return false;
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       return false;

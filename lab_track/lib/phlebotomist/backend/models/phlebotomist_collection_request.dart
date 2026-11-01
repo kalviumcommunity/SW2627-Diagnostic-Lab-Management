@@ -35,7 +35,7 @@ class PhlebotomistCollectionRequest {
     if (sampleBarcode.trim().isEmpty) {
       return 'Please scan or enter a sterile vial barcode.';
     }
-    if (temperatureCelsius < 1.0 || temperatureCelsius > 12.0) {
+    if (!temperatureCelsius.isFinite || temperatureCelsius < 2.0 || temperatureCelsius > 8.0) {
       return 'Cold-box temperature (${temperatureCelsius.toStringAsFixed(1)}°C) is outside permissible range (2.0°C - 8.0°C).';
     }
     if (!patientIdentified) {

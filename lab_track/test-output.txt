@@ -1,0 +1,44 @@
+00:00 +0: loading A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart
+00:00 +0: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +1: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +2: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +3: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +4: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +5: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +6: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +7: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +8: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +9: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +10: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +11: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +12: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +13: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +14: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +15: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +16: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +17: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 1. Patient booking propagates directly to Phlebotomist, Front Desk, & Lab
+00:00 +18: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests Renders AdminHomeScreen with Overview KPI cards and pipeline
+00:00 +19: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests Renders AdminHomeScreen with Overview KPI cards and pipeline
+00:00 +20: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests Renders AdminHomeScreen with Overview KPI cards and pipeline
+00:00 +21: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests Renders AdminHomeScreen with Overview KPI cards and pipeline
+00:01 +22: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests Renders AdminHomeScreen with Overview KPI cards and pipeline
+00:01 +23: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests Renders AdminHomeScreen with Overview KPI cards and pipeline
+00:01 +24: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests Renders AdminHomeScreen with Overview KPI cards and pipeline
+00:01 +25: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests Renders AdminHomeScreen with Overview KPI cards and pipeline
+00:01 +26: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests Renders AdminHomeScreen with Overview KPI cards and pipeline
+00:01 +27: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests Renders AdminHomeScreen with Overview KPI cards and pipeline
+00:01 +28: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests Renders AdminHomeScreen with Overview KPI cards and pipeline
+00:01 +29: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/widget_test.dart: PatientHomeScreen smoke test
+00:02 +30: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 4. Lab result entry & Pathologist authorization unlocks Patient Report
+00:02 +31: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 4. Lab result entry & Pathologist authorization unlocks Patient Report
+00:02 +32: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/cross_role_data_flow_test.dart: Cross-Role Unified Data Flow Integration Tests 4. Lab result entry & Pathologist authorization unlocks Patient Report
+00:02 +33: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/frontdesk_test.dart: FrontDeskHomeScreen Widget Tests Tapping Instant Search navigates to InstantSearchScreen
+00:02 +34: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests Tapping SLA tab displays SlaDashboardScreen metrics
+00:02 +35: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests Tapping SLA tab displays SlaDashboardScreen metrics
+00:02 +36: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/lab_test.dart: LabHomeScreen Widget Tests Renders LabHomeScreen with KPI bar, quick accession bar, and tab navigation
+00:03 +37: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/lab_test.dart: LabHomeScreen Widget Tests Renders LabHomeScreen with KPI bar, quick accession bar, and tab navigation
+00:04 +38: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/lab_test.dart: LabHomeScreen Widget Tests Renders LabHomeScreen with KPI bar, quick accession bar, and tab navigation
+00:04 +39: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests Tapping Staff Fleet tab displays StaffManagementScreen
+00:05 +40: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests LoginScreen renders Google auth and mode switching
+00:05 +41: A:/Projects/SW2627-Diagnostic-Lab-Management/lab_track/test/admin_test.dart: Admin Dashboard & Authentication Widget Tests SignupScreen renders all registration fields
+00:05 +42: All tests passed!

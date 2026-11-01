@@ -3,7 +3,6 @@ import 'dart:io';
 
 import '../lib/data/mock/seed_users.dart';
 import '../lib/data/models/user_model.dart';
-import '../lib/domain/enums/user_role.dart';
 
 void main() {
   print('================================================================');

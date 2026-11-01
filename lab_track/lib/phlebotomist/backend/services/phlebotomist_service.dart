@@ -5,7 +5,6 @@ import '../../../data/repositories/order_repository.dart';
 import '../../../data/repositories/sample_repository.dart';
 import '../../../data/services/central_data_store.dart';
 import '../../../domain/enums/sample_status.dart';
-import '../../../domain/enums/user_role.dart';
 import '../models/phlebotomist_collection_request.dart';
 
 /// Phlebotomist Backend API Service (Collection, Vial Barcoding & Cold-Chain Intake)
@@ -116,19 +115,6 @@ class PhlebotomistService {
       'notes': 'Specimen $barcode bound at doorstep.',
     });
 
-    // Background write to Firestore if available
-    try {
-      _sampleRepository.transitionSample(
-        barcode: barcode,
-        newStatus: SampleStatus.collected,
-        actorId: request.phlebotomistId,
-        actorRole: UserRole.phlebotomist,
-        actorName: request.phlebotomistName,
-        temperatureC: request.temperatureCelsius,
-        note: request.notes,
-      );
-    } catch (_) {}
-
     return _store.getSample(barcode)!;
   }
 
@@ -148,20 +134,6 @@ class PhlebotomistService {
       receiverName: receiverName,
     );
 
-    // Background sync to Firestore
-    for (final barcode in sampleBarcodes) {
-      try {
-        _sampleRepository.transitionSample(
-          barcode: barcode,
-          newStatus: SampleStatus.receivedAtBranch,
-          actorId: phlebotomistId,
-          actorRole: UserRole.phlebotomist,
-          actorName: receiverName,
-          branchId: branchId,
-          note: hubNotes,
-        );
-      } catch (_) {}
-    }
   }
 
   /// Log cold box temperature

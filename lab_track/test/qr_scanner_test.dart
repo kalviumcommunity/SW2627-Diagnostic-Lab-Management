@@ -7,6 +7,8 @@ import 'package:lab_track/shared/widgets/universal_qr_scanner_modal.dart';
 void main() {
   group('ScannerService Unit Tests', () {
     test('extracts direct standard specimen barcodes', () {
+      expect(ScannerService.extractSampleBarcode('SMP-TEST-BIND-01'), 'SMP-TEST-BIND-01');
+      expect(ScannerService.extractSampleBarcode('SMP-ABCDEF1234567890ABCDEF1234567890'), 'SMP-ABCDEF1234567890ABCDEF1234567890');
       expect(ScannerService.extractSampleBarcode('SMP-88390'), 'SMP-88390');
       expect(ScannerService.extractSampleBarcode('smp-88390'), 'SMP-88390');
       expect(ScannerService.extractSampleBarcode('  SMP-12345  '), 'SMP-12345');
