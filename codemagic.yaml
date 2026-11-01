@@ -75,13 +75,13 @@ workflows:
           printf "84831b9409646a918e30573bab4c9c91346d8abd\n" > "$ANDROID_HOME/licenses/android-sdk-preview-license" 2>/dev/null || true
           yes | flutter doctor --android-licenses >/dev/null 2>&1 || true
 
-          # Ensure Android SDK Platform 35 and 36 are installed
+          # Ensure Android SDK Platform 35 is installed
           if command -v sdkmanager >/dev/null 2>&1; then
             yes | sdkmanager --licenses >/dev/null 2>&1 || true
-            sdkmanager "platforms;android-35" "platforms;android-36" "build-tools;35.0.0" >/dev/null 2>&1 || true
+            sdkmanager "platforms;android-35" "build-tools;35.0.0" >/dev/null 2>&1 || true
           elif [ -f "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
             yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
-            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "platforms;android-36" "build-tools;35.0.0" >/dev/null 2>&1 || true
+            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0" >/dev/null 2>&1 || true
           fi
 
           # Grant Gradle wrapper execution permission
@@ -121,7 +121,7 @@ workflows:
         script: |
           set -e
           cd lab_track
-          flutter build apk --release --dart-define=LABTRACK_DEMO=true
+          flutter build apk --release --dart-define=LABTRACK_DEMO=true --verbose
 
       # -----------------------------------------------------------------------
       # Step 6: Print Signing Fingerprints
