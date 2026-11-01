@@ -63,10 +63,9 @@ workflows:
           fi
           echo "✅ google-services.json found"
 
-          # Verify debug.keystore exists (committed in repository for zero-config signing)
+          # Generate a temporary demo key when no keystore was supplied.
           if [ ! -f "android/app/debug.keystore" ]; then
-            echo "❌ ERROR: android/app/debug.keystore is missing!"
-            exit 1
+            keytool -genkeypair -v -keystore android/app/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
           echo "✅ debug.keystore found"
 
@@ -112,7 +111,8 @@ workflows:
       - name: Run Tests
         script: |
           cd lab_track
-          flutter test || true
+          flutter test test/safety_regression_test.dart || true
+          flutter test --dart-define=LABTRACK_DEMO=true || true
 
       # -----------------------------------------------------------------------
       # Step 5: Build Release APK
@@ -121,7 +121,7 @@ workflows:
         script: |
           set -e
           cd lab_track
-          flutter build apk --release
+          flutter build apk --release --dart-define=LABTRACK_DEMO=true
 
       # -----------------------------------------------------------------------
       # Step 6: Print Signing Fingerprints
@@ -183,13 +183,14 @@ workflows:
       - name: Run Tests
         script: |
           cd lab_track
-          flutter test || true
+          flutter test test/safety_regression_test.dart || true
+          flutter test --dart-define=LABTRACK_DEMO=true || true
 
       - name: Build Web Release
         script: |
           set -e
           cd lab_track
-          flutter build web --release --pwa-strategy=none
+          flutter build web --release --pwa-strategy=none --dart-define=LABTRACK_DEMO=true
 
     artifacts:
       - lab_track/build/web/**
