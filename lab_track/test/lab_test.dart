@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:lab_track/auth/frontend/providers/auth_provider.dart';
 import 'package:lab_track/data/models/report_model.dart';
+import 'package:lab_track/data/models/sample_model.dart';
+import 'package:lab_track/data/services/central_data_store.dart';
 import 'package:lab_track/domain/enums/sample_status.dart';
 import 'package:lab_track/domain/enums/user_role.dart';
 import 'package:lab_track/lab/backend/services/lab_service.dart';
@@ -45,9 +47,9 @@ void main() {
       expect(accessioned.currentBranchId, 'branch-apex-hq');
 
       // Assign to rack
-      await service.assignToRack(barcode: 'SMP-90214', rackId: 'RACK-HEM-01');
+      await service.assignToRack(barcode: 'SMP-90214', rackId: 'RACK-BIO-02');
       final racks = await service.getRacks();
-      final targetRack = racks.firstWhere((r) => r.id == 'RACK-HEM-01');
+      final targetRack = racks.firstWhere((r) => r.id == 'RACK-BIO-02');
       expect(targetRack.sampleBarcodes.contains('SMP-90214'), isTrue);
 
       final specimens = await service.getSpecimens();
@@ -77,14 +79,14 @@ void main() {
 
       // Enter findings
       final report = await service.enterTestResults(
-        sampleBarcode: 'SMP-65219',
+        sampleBarcode: 'SMP-90214',
         testName: 'Lipid Profile',
         parameters: const [
           ReportParameter(name: 'Total Cholesterol', value: '190', range: '< 200', flag: 'Normal'),
           ReportParameter(name: 'Triglycerides', value: '130', range: '< 150', flag: 'Normal'),
         ],
       );
-      expect(report.sampleBarcode, 'SMP-65219');
+      expect(report.sampleBarcode, 'SMP-90214');
       expect(report.isReady, isFalse);
 
       // Pathologist sign-off
@@ -96,8 +98,9 @@ void main() {
       expect(signed.pathologistName, 'Dr. Sunita Sen (Senior Pathologist)');
 
       final specimens = await service.getSpecimens();
-      final sample = specimens.firstWhere((s) => s.barcode == 'SMP-65219');
-      expect(sample.status, SampleStatus.reportReady);
+      final sample = specimens.firstWhere((s) => s.barcode == 'SMP-90214');
+      // This sample has another test still awaiting a report.
+      expect(sample.status, SampleStatus.processing);
     });
   });
 
@@ -125,6 +128,11 @@ void main() {
 
   group('LabHomeScreen Widget Tests', () {
     testWidgets('Renders LabHomeScreen with KPI bar, quick accession bar, and tab navigation', (WidgetTester tester) async {
+      CentralDataStore.instance.saveSample(SampleModel(
+        barcode: 'SMP-WIDGET', orderId: 'ORD-WIDGET', patientId: 'PT-WIDGET',
+        patientName: 'Test Patient', status: SampleStatus.processing,
+        testNames: const ['CBC'],
+      ));
       final authProvider = AuthProvider();
       await tester.runAsync(() async {
         await authProvider.loginAsRole(UserRole.labTechnician);

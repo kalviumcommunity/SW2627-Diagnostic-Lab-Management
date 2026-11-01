@@ -86,8 +86,7 @@ class ReportModel {
   DateTime get createdAt => uploadedAt ?? DateTime.now();
   DateTime? get verificationDate => verifiedAt;
   bool get isReady =>
-      status.toLowerCase().contains('verified') ||
-      status.toLowerCase().contains('ready');
+      status.trim().toLowerCase() == 'verified & ready';
 
   Map<String, dynamic> toMap() {
     return {
@@ -98,6 +97,7 @@ class ReportModel {
       'status': status,
       'pdfUrl': pdfUrl,
       'uploadedById': uploadedById,
+      'pathologistName': pathologistName,
       'uploadedAt': uploadedAt != null ? Timestamp.fromDate(uploadedAt!) : null,
       'verifiedAt': verifiedAt != null ? Timestamp.fromDate(verifiedAt!) : null,
       'testResults': testResults.map((p) => p.toMap()).toList(),

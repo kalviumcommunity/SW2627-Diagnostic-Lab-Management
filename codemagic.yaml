@@ -1,28 +1,34 @@
 # ==============================================================================
 # Codemagic CI/CD Configuration for LabTrack (SW2627: Diagnostic Lab Management)
 # ==============================================================================
-# Full support for Firebase Authentication, Google Sign-In, and Cloud Firestore.
-# Configured for Codemagic Free Tier (mac_mini_m2 runner - 500 free minutes/month).
-# Documentation: https://docs.codemagic.io/yaml-basic-configuration/yaml-getting-started/
+# Optimized for Codemagic FREE TIER:
+#   - Instance: mac_mini_m2 (500 free build minutes/month on Free Individual Plan)
+#   - Zero configuration needed: No paid add-ons, no secret groups required
+#   - Pre-configured with committed debug.keystore and google-services.json
+#   - Instant first-run success: Builds signed installable Release APK out of the box
+#   - Triggers on 'main' branch with auto-cancellation of superseded builds
+#
+# Quick Start:
+#   1. Sign in to https://codemagic.io with your GitHub account
+#   2. Click "Add application" → select this repository (Flutter App)
+#   3. Select "codemagic.yaml" as the configuration type
+#   4. Click "Start new build" → choose workflow "LabTrack Android Release APK"
+#   5. When done, download the APK directly from the "Artifacts" tab!
 # ==============================================================================
 
 workflows:
   # ============================================================================
-  # 1. ANDROID WORKFLOW: Release APK & Android App Bundle (AAB)
+  # 1. ANDROID WORKFLOW: Release APK (Free Tier Optimized)
   # ============================================================================
   android-workflow:
-    name: LabTrack Android (Release APK & AAB with Firebase)
-    max_build_duration: 60
+    name: LabTrack Android Release APK
+    max_build_duration: 30
     instance_type: mac_mini_m2
     environment:
       flutter: stable
       java: 17
-      groups:
-        - firebase_config # Optional Codemagic UI environment group
       vars:
         PACKAGE_NAME: "com.labtrack.lab_track"
-        ANDROID_NDK_VERSION: "27.0.12077973"
-        GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:ReservedCodeCacheSize=512m -Dfile.encoding=UTF-8"
     cache:
       cache_paths:
         - ~/.pub-cache
@@ -31,126 +37,121 @@ workflows:
     triggering:
       events:
         - push
-        - pull_request
-        - tag
       branch_patterns:
-        - pattern: '*'
+        - pattern: 'main'
           include: true
           source: true
-      cancel_previous_builds: false
+      cancel_previous_builds: true
 
     scripts:
-      - name: 🛠️ 1. Environment & Firebase Config Verification
+      # -----------------------------------------------------------------------
+      # Step 1: Setup Android Environment & Dependencies
+      # -----------------------------------------------------------------------
+      - name: Setup Android Environment
         script: |
           set -e
           cd lab_track
-          echo "=== Checking Android & Firebase Environment ==="
-          
-          # 1. Setup local.properties with correct SDK paths
+
+          # Write local.properties with correct SDK paths for Codemagic runner
           echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
           echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
-          cat android/local.properties
 
-          # 2. Decode google-services.json from environment variable if provided
-          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
-            echo "Decoding google-services.json from GOOGLE_SERVICES_JSON environment variable..."
-            python3 -c "import base64, sys, os; open('android/app/google-services.json', 'wb').write(base64.b64decode(os.environ['GOOGLE_SERVICES_JSON']))"
-          elif [ -n "$ANDROID_FIREBASE_SECRET" ]; then
-            echo "Decoding google-services.json from ANDROID_FIREBASE_SECRET environment variable..."
-            python3 -c "import base64, sys, os; open('android/app/google-services.json', 'wb').write(base64.b64decode(os.environ['ANDROID_FIREBASE_SECRET']))"
-          elif [ -f "android/app/google-services.json" ]; then
-            echo "✅ Found committed android/app/google-services.json"
-          else
-            echo "❌ ERROR: google-services.json is missing!"
-            echo "Please add GOOGLE_SERVICES_JSON as a base64 environment variable in Codemagic."
+          # Verify google-services.json exists (committed in repository)
+          if [ ! -f "android/app/google-services.json" ]; then
+            echo "❌ ERROR: android/app/google-services.json is missing!"
             exit 1
           fi
+          echo "✅ google-services.json found"
 
-          # 3. Verify debug.keystore or decode custom release keystore
-          if [ -n "$CM_KEYSTORE" ]; then
-            echo "Writing custom keystore from Codemagic environment variable..."
-            python3 -c "import base64, sys, os; open('android/app/release.keystore', 'wb').write(base64.b64decode(os.environ['CM_KEYSTORE']))"
-            export CM_KEYSTORE_PATH="android/app/release.keystore"
-          elif [ -f "android/app/debug.keystore" ]; then
-            echo "✅ Using bundled debug.keystore matching Firebase certificate hash"
+          # Verify debug.keystore exists (committed in repository for zero-config signing)
+          if [ ! -f "android/app/debug.keystore" ]; then
+            echo "❌ ERROR: android/app/debug.keystore is missing!"
+            exit 1
+          fi
+          echo "✅ debug.keystore found"
+
+          # Accept Android SDK licenses non-interactively
+          mkdir -p "$ANDROID_HOME/licenses" >/dev/null 2>&1 || true
+          printf "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63c6825ea9c5514f83c2829b004d1fee\n84831b9409646a918e30573bab4c9c91346d8abd\n" > "$ANDROID_HOME/licenses/android-sdk-license" 2>/dev/null || true
+          printf "84831b9409646a918e30573bab4c9c91346d8abd\n" > "$ANDROID_HOME/licenses/android-sdk-preview-license" 2>/dev/null || true
+          yes | flutter doctor --android-licenses >/dev/null 2>&1 || true
+
+          # Ensure Android SDK Platform 35 and 36 are installed
+          if command -v sdkmanager >/dev/null 2>&1; then
+            yes | sdkmanager --licenses >/dev/null 2>&1 || true
+            sdkmanager "platforms;android-35" "platforms;android-36" "build-tools;35.0.0" >/dev/null 2>&1 || true
+          elif [ -f "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
+            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "platforms;android-36" "build-tools;35.0.0" >/dev/null 2>&1 || true
           fi
 
-          # 4. Accept all Android SDK licenses automatically
-          echo "Accepting Android SDK licenses..."
-          yes | flutter doctor --android-licenses || true
-          if [ -d "$ANDROID_HOME/cmdline-tools/latest/bin" ]; then
-            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
-          elif [ -d "$ANDROID_HOME/tools/bin" ]; then
-            yes | "$ANDROID_HOME/tools/bin/sdkmanager" --licenses || true
-          elif command -v sdkmanager &> /dev/null; then
-            yes | sdkmanager --licenses || true
-          fi
-
-          # 5. Grant gradlew execution permissions
+          # Grant Gradle wrapper execution permission
           chmod +x android/gradlew
 
-      - name: 📦 2. Fetch Flutter Dependencies
+      # -----------------------------------------------------------------------
+      # Step 2: Fetch Flutter Dependencies
+      # -----------------------------------------------------------------------
+      - name: Install Dependencies
         script: |
           set -e
           cd lab_track
           flutter --version
           flutter pub get
 
-      - name: 🔍 3. Static Code Analysis
+      # -----------------------------------------------------------------------
+      # Step 3: Static Analysis (informative, non-blocking)
+      # -----------------------------------------------------------------------
+      - name: Analyze Code
         script: |
           cd lab_track
-          flutter analyze --no-fatal-infos || true
+          flutter analyze --no-fatal-infos --no-fatal-warnings || true
 
-      - name: 🧪 4. Execute Automated Test Suite
+      # -----------------------------------------------------------------------
+      # Step 4: Run Tests (non-blocking to ensure release artifact is built)
+      # -----------------------------------------------------------------------
+      - name: Run Tests
         script: |
           cd lab_track
           flutter test || true
 
-      - name: 📱 5. Build Android Release APK
+      # -----------------------------------------------------------------------
+      # Step 5: Build Release APK
+      # -----------------------------------------------------------------------
+      - name: Build Release APK
         script: |
           set -e
           cd lab_track
-          flutter build apk --release --android-skip-build-dependency-validation
+          flutter build apk --release
 
-      - name: 📦 6. Build Android App Bundle (AAB)
-        script: |
-          set -e
-          cd lab_track
-          flutter build appbundle --release --android-skip-build-dependency-validation
-
-      - name: 🔑 7. Output Firebase SHA-1 & SHA-256 Fingerprints
+      # -----------------------------------------------------------------------
+      # Step 6: Print Signing Fingerprints
+      # -----------------------------------------------------------------------
+      - name: Print Keystore Fingerprints
         script: |
           cd lab_track/android
           echo "=========================================================================="
-          echo "🔑 ANDROID SIGNING FINGERPRINTS (REQUIRED IN FIREBASE CONSOLE)"
-          echo "=========================================================================="
-          echo "For Google Auth to work seamlessly, ensure these SHA fingerprints are"
-          echo "added to your Firebase Project Settings:"
-          echo "👉 Firebase Console -> Project Settings -> General -> Your Android Apps"
-          echo "   App: com.labtrack.lab_track"
-          echo "--------------------------------------------------------------------------"
-          ./gradlew signingReport | grep -E "(Variant|Config|Alias|SHA1|SHA-256)" || true
+          echo "🔑 SIGNING FINGERPRINTS (debug.keystore used for zero-config free builds):"
+          keytool -list -v -keystore app/debug.keystore -alias androiddebugkey -storepass android -keypass android 2>/dev/null | grep -E "(SHA1|SHA256)" || true
           echo "=========================================================================="
 
     artifacts:
       - lab_track/build/app/outputs/flutter-apk/*.apk
-      - lab_track/build/app/outputs/bundle/release/*.aab
-      - lab_track/build/**/outputs/**/mapping.txt
 
-    publishing:
-      email:
-        recipients:
-          - dev@labtrack.com
-        notify:
-          success: true
-          failure: true
+    # Optional: Email notification (uncomment and replace with your email to receive notification):
+    # publishing:
+    #   email:
+    #     recipients:
+    #       - your-email@example.com
+    #     notify:
+    #       success: true
+    #       failure: true
 
   # ============================================================================
-  # 2. WEB WORKFLOW: Production Web SPA Bundle (HTML5 / CanvasKit)
+  # 2. WEB WORKFLOW: Production Web SPA Bundle (Free Tier Optimized)
   # ============================================================================
   web-workflow:
-    name: LabTrack Web (Production SPA Bundle with Firebase)
-    max_build_duration: 30
+    name: LabTrack Web Release
+    max_build_duration: 20
     instance_type: mac_mini_m2
     environment:
       flutter: stable
@@ -160,29 +161,31 @@ workflows:
     triggering:
       events:
         - push
-        - pull_request
       branch_patterns:
-        - pattern: '*'
+        - pattern: 'main'
           include: true
+          source: true
+      cancel_previous_builds: true
+
     scripts:
-      - name: 📦 1. Fetch Flutter Web Dependencies
+      - name: Install Dependencies
         script: |
           set -e
           cd lab_track
           flutter --version
           flutter pub get
 
-      - name: 🔍 2. Analyze Code
+      - name: Analyze Code
         script: |
           cd lab_track
-          flutter analyze --no-fatal-infos || true
+          flutter analyze --no-fatal-infos --no-fatal-warnings || true
 
-      - name: 🧪 3. Run Unit Tests
+      - name: Run Tests
         script: |
           cd lab_track
           flutter test || true
 
-      - name: 🌐 4. Build Flutter Web Release
+      - name: Build Web Release
         script: |
           set -e
           cd lab_track
@@ -191,10 +194,11 @@ workflows:
     artifacts:
       - lab_track/build/web/**
 
-    publishing:
-      email:
-        recipients:
-          - dev@labtrack.com
-        notify:
-          success: true
-          failure: true
+    # Optional: Email notification (uncomment and replace with your email to receive notification):
+    # publishing:
+    #   email:
+    #     recipients:
+    #       - your-email@example.com
+    #     notify:
+    #       success: true
+    #       failure: true

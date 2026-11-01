@@ -7,6 +7,7 @@ import '../../../domain/enums/order_status.dart';
 import '../../../domain/enums/sample_status.dart';
 import '../../../domain/enums/user_role.dart';
 import '../models/patient_booking_request.dart';
+import 'package:uuid/uuid.dart';
 
 /// Patient Backend API Service
 /// Connected to CentralDataStore to enable seamless cross-role data sync
@@ -26,8 +27,8 @@ class PatientApiService {
     await Future.delayed(const Duration(milliseconds: 300)); // Simulate API delay
 
     final now = DateTime.now();
-    final orderId = 'ORD-${now.millisecondsSinceEpoch.toString().substring(7)}';
-    final sampleBarcode = 'SMP-${now.millisecondsSinceEpoch.toString().substring(8)}';
+    final orderId = 'ORD-${const Uuid().v4().replaceAll('-', '').toUpperCase()}';
+    final sampleBarcode = 'SMP-${const Uuid().v4().replaceAll('-', '').toUpperCase()}';
 
     final order = OrderModel(
       id: orderId,

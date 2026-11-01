@@ -70,6 +70,10 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
           _ParameterRowController(name: 'Lymphocytes', value: '30', unit: '%', range: '20 - 40', flag: 'Normal'),
         ];
       }
+      // Template values are not patient measurements.
+      for (final row in _controllers) {
+        row.valueController.clear();
+      }
     }
   }
 
@@ -85,7 +89,7 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
     setState(() {
       _controllers.add(_ParameterRowController(
         name: 'New Test Parameter',
-        value: '0.0',
+        value: '',
         unit: 'mg/dL',
         range: '0.0 - 10.0',
         flag: 'Normal',
@@ -94,6 +98,13 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
   }
 
   void _saveResults() async {
+    if (_controllers.isEmpty || _controllers.any((row) =>
+        row.nameController.text.trim().isEmpty || row.valueController.text.trim().isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a name and measured value for every parameter.')),
+      );
+      return;
+    }
     setState(() => _isSaving = true);
 
     final parameters = _controllers.map((c) {

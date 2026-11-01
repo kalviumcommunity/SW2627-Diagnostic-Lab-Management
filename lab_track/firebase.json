@@ -1,1 +1,24 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"lab-track-f8a33","appId":"1:939933930947:android:751beb3e09287efdf85976","fileOutput":"android/app/google-services.json"}},"dart":{"lib/config/firebase_options.dart":{"projectId":"lab-track-f8a33","configurations":{"android":"1:939933930947:android:751beb3e09287efdf85976"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "lab-track-f8a33",
+          "appId": "1:939933930947:android:751beb3e09287efdf85976",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/config/firebase_options.dart": {
+          "projectId": "lab-track-f8a33",
+          "configurations": {
+            "android": "1:939933930947:android:751beb3e09287efdf85976"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

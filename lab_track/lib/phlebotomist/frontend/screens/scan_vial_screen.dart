@@ -166,8 +166,6 @@ class _ScanVialScreenState extends State<ScanVialScreen> with SingleTickerProvid
       sampleBarcode: barcode,
       vialType: _selectedVialType,
       temperatureCelsius: _temperatureCelsius,
-      latitude: 28.4595,
-      longitude: 77.0266,
       locationAddress: _currentOrder!.collectionAddress,
       notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
       phlebotomistId: user?.id ?? 'PH-204',

@@ -399,7 +399,7 @@ class ReportModal extends StatelessWidget {
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Thermal summary slip sent to desk printer!'),
+                          content: Text('Receipt printing is not available in this build.'),
                           backgroundColor: AppColors.accent,
                         ),
                       );
@@ -417,7 +417,7 @@ class ReportModal extends StatelessWidget {
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Downloading official PDF diagnostic report...'),
+                          content: Text('PDF printing is not available in this build.'),
                           backgroundColor: AppColors.primary,
                         ),
                       );

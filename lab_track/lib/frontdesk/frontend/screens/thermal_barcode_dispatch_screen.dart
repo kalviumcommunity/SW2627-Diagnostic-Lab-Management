@@ -584,7 +584,7 @@ class _ThermalBarcodeDispatchScreenState extends State<ThermalBarcodeDispatchScr
                     ),
                     const SizedBox(height: 2),
                     const Text(
-                      'Connected: Zebra ZD410 (USB / Desk Spooler 01)',
+                      'Printer integration is not available in this build',
                       style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                     ),
                   ],
@@ -643,11 +643,11 @@ class _ThermalBarcodeDispatchScreenState extends State<ThermalBarcodeDispatchScr
                 return ThermalStickerCard(
                   label: label,
                   onPrintSingle: () async {
-                    await provider.printThermalLabels([label]);
+                    final printed = await provider.printThermalLabels([label]);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Printed label for vial ${label.barcode}'),
+                          content: Text(printed ? 'Printed label for vial ${label.barcode}' : 'Printing is not available in this build.'),
                           backgroundColor: AppColors.accent,
                         ),
                       );

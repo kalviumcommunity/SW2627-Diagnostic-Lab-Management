@@ -5,6 +5,7 @@ import '../../../data/models/report_model.dart';
 import '../../../data/services/central_data_store.dart';
 import '../../backend/models/patient_booking_request.dart';
 import '../../backend/repositories/patient_repository.dart';
+import '../../../config/app_mode.dart';
 
 /// Patient State Manager
 /// Auto-syncs live updates from Phlebotomist, Front Desk, Lab, and Pathologist.
@@ -15,8 +16,11 @@ class PatientProvider extends ChangeNotifier {
   String? _errorMessage;
 
   SampleModel? _activeSample;
-  List<OrderModel> _orders = [];
+  final List<OrderModel> _orders = [];
   List<ReportModel> _reports = [];
+  String? _patientId;
+  int _refreshGeneration = 0;
+  bool _disposed = false;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -26,39 +30,54 @@ class PatientProvider extends ChangeNotifier {
 
   PatientProvider({PatientRepository? repository})
       : _repository = repository ?? PatientRepository() {
-    _activeSample = _repository.getInitialSample('PT-84210');
-    _reports = _repository.getInitialReports('PT-84210');
-    refreshPatientData('PT-84210');
-
     // Cross-role reactive sync
     CentralDataStore.instance.addListener(_onStoreChanged);
+    if (isDemoMode) setPatient('PT-84210');
+  }
+
+  void setPatient(String? patientId) {
+    if (_patientId == patientId) return;
+    _patientId = patientId;
+    _refreshGeneration++;
+    _activeSample = null;
+    _reports = [];
+    _orders.clear();
+    if (patientId != null) refreshPatientData(patientId);
   }
 
   void _onStoreChanged() {
-    refreshPatientData('PT-84210');
+    final patientId = _patientId;
+    if (patientId != null) refreshPatientData(patientId);
   }
 
   @override
   void dispose() {
+    _disposed = true;
+    _refreshGeneration++;
     CentralDataStore.instance.removeListener(_onStoreChanged);
     super.dispose();
   }
 
   Future<void> refreshPatientData(String patientId) async {
+    final generation = ++_refreshGeneration;
     _isLoading = true;
     notifyListeners();
 
     try {
       final sample = await _repository.getActiveSample(patientId);
       final reportList = await _repository.getReports(patientId);
+      if (_disposed || generation != _refreshGeneration || patientId != _patientId) return;
       _activeSample = sample;
       _reports = reportList;
       _errorMessage = null;
     } catch (e) {
+      if (_disposed || generation != _refreshGeneration) return;
       _errorMessage = e.toString();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (!_disposed && generation == _refreshGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -85,6 +104,7 @@ class PatientProvider extends ChangeNotifier {
 
   /// Track any sample by barcode in real time
   Future<SampleModel?> trackSample(String barcode) async {
-    return _repository.trackSample(barcode);
+    final sample = await _repository.trackSample(barcode);
+    return sample?.patientId == _patientId ? sample : null;
   }
 }

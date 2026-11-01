@@ -312,7 +312,7 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
                           style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                         ),
                         const Text(
-                          'Chief Pathologist • Electronic Signature Cryptographically Validated',
+                          'Report verification',
                           style: TextStyle(fontSize: 10.5, color: AppColors.textTertiary),
                         ),
                       ],
@@ -423,8 +423,8 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Downloading certified report for ${report.testName}...'),
-                      backgroundColor: AppColors.success,
+                      content: Text('PDF download is not available in this build.'),
+                      backgroundColor: AppColors.warning,
                     ),
                   );
                 },

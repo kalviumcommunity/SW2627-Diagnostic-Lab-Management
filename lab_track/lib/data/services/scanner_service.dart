@@ -18,14 +18,14 @@ class ScannerService {
     if (trimmed.isEmpty) return null;
 
     // 1. Direct standard barcode match (e.g. SMP-88390 or SMP-10293)
-    final directRegex = RegExp(r'\b(SMP-\d{4,8})\b', caseSensitive: false);
+    final directRegex = RegExp(r'\b(SMP-[A-Z0-9]+(?:-[A-Z0-9]+)*)\b', caseSensitive: false);
     final directMatch = directRegex.firstMatch(trimmed);
     if (directMatch != null) {
       return directMatch.group(1)!.toUpperCase();
     }
 
     // 2. Order ID match (e.g. ORD-84210)
-    final orderRegex = RegExp(r'\b(ORD-\d{4,8})\b', caseSensitive: false);
+    final orderRegex = RegExp(r'\b(ORD-[A-Z0-9]+(?:-[A-Z0-9]+)*)\b', caseSensitive: false);
     final orderMatch = orderRegex.firstMatch(trimmed);
     if (orderMatch != null) {
       return orderMatch.group(1)!.toUpperCase();
@@ -45,8 +45,8 @@ class ScannerService {
     if (code == null || code.trim().isEmpty) return false;
     final normalized = code.trim().toUpperCase();
     // SMP-XXXX or standard alphanumeric
-    return RegExp(r'^(SMP|ORD)-[A-Z0-9]{4,10}$').hasMatch(normalized) ||
-        RegExp(r'^[A-Z0-9\-]{5,20}$').hasMatch(normalized);
+    return RegExp(r'^(SMP|ORD)-[A-Z0-9]{4,32}$').hasMatch(normalized) ||
+        RegExp(r'^[A-Z0-9\-]{5,36}$').hasMatch(normalized);
   }
 
   /// Formats a barcode for display

@@ -121,7 +121,7 @@ void main() {
 
       final report = await labService.enterTestResults(
         sampleBarcode: sampleBarcode,
-        testName: 'Complete Blood Count (CBC)',
+        testName: 'Complete Blood Count (CBC) with Differential',
         parameters: const [
           ReportParameter(name: 'Hemoglobin', value: '15.2', unit: 'g/dL', range: '13.0 - 17.0', flag: 'Normal'),
           ReportParameter(name: 'Platelet Count', value: '280,000', unit: '/uL', range: '150,000 - 450,000', flag: 'Normal'),

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../../../domain/enums/user_role.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/mock/seed_users.dart';
+import '../../../config/app_mode.dart';
 
 class AuthRepository {
   final FirebaseAuth? _firebaseAuth;
@@ -86,7 +87,7 @@ class AuthRepository {
   }
 
   Future<UserModel> signInWithGoogle({UserRole role = UserRole.patient}) async {
-    if (_firebaseAuth == null) {
+    if (_firebaseAuth == null && isDemoMode) {
       await Future.delayed(const Duration(milliseconds: 500));
       final demoUser = _demoUserForRole(role).copyWith(
         id: 'GOOGLE-DEMO-${DateTime.now().millisecondsSinceEpoch}',
@@ -96,6 +97,7 @@ class AuthRepository {
       _cachedUser = demoUser;
       return demoUser;
     }
+    if (_firebaseAuth == null) throw Exception('Authentication is unavailable.');
 
     try {
       final GoogleAuthProvider googleProvider = GoogleAuthProvider();
@@ -134,7 +136,7 @@ class AuthRepository {
         name: fbUser.displayName ?? 'Google Patient',
         phoneNumber: fbUser.phoneNumber ?? defaultDemoPatient.phoneNumber,
         email: fbUser.email,
-        role: role,
+        role: UserRole.patient,
         createdAt: DateTime.now(),
       );
 
@@ -215,12 +217,13 @@ class AuthRepository {
           name: cred.user?.displayName ?? email.split('@').first,
           email: email.trim(),
           phoneNumber: cred.user?.phoneNumber ?? '',
-          role: role,
+          role: UserRole.patient,
           createdAt: DateTime.now(),
         );
         _cachedUser = user;
         return user;
       } on FirebaseAuthException catch (e) {
+        if (!isDemoMode) throw Exception(_mapFirebaseAuthError(e));
         if (e.code == 'invalid-credential' || e.code == 'user-not-found' || e.code == 'wrong-password') {
           // Check if testing demo credentials
           debugPrint('Firebase Auth notice: ${e.message}');
@@ -228,11 +231,13 @@ class AuthRepository {
           throw Exception(e.message ?? 'Authentication failed.');
         }
       } catch (e) {
+        if (!isDemoMode) rethrow;
         debugPrint('Sign in fallback notice: $e');
       }
     }
 
-    // Demo / offline fallback
+    if (!isDemoMode) throw Exception('Authentication is unavailable.');
+    // Explicit demo build only.
     await Future.delayed(const Duration(milliseconds: 350));
     final seedMatch = kSeedUsersByEmail[email.trim().toLowerCase()] ??
         kSeedUsersById[email.trim()] ??
@@ -260,6 +265,9 @@ class AuthRepository {
     String? gender,
     String? address,
   }) async {
+    if (!isDemoMode && role != UserRole.patient) {
+      throw Exception('Staff accounts must be provisioned by an administrator.');
+    }
     if (name.trim().isEmpty || email.trim().isEmpty || password.length < 6) {
       throw Exception('Enter a name, valid email, and password of at least 6 characters.');
     }
@@ -303,11 +311,13 @@ class AuthRepository {
         }
         throw Exception(e.message ?? 'Registration failed.');
       } catch (e) {
+        if (!isDemoMode) rethrow;
         debugPrint('Signup error notice: $e');
       }
     }
 
-    // Demo fallback
+    if (!isDemoMode) throw Exception('Authentication is unavailable.');
+    // Explicit demo build only.
     await Future.delayed(const Duration(milliseconds: 400));
     final user = UserModel(
       id: '${role.name.toUpperCase()}-${DateTime.now().millisecondsSinceEpoch}',
@@ -326,6 +336,7 @@ class AuthRepository {
   }
 
   Future<UserModel> signInAsRole(UserRole role) async {
+    if (!isDemoMode) throw Exception('Demo login is disabled.');
     await Future.delayed(const Duration(milliseconds: 300));
     final UserModel user;
     switch (role) {
@@ -354,6 +365,9 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
+    if (!isDemoMode) {
+      return signInWithCredentials(role: UserRole.patient, email: email, password: password);
+    }
     final cleanEmail = email.trim().toLowerCase();
 
     // Fast-track demo credentials for instant reliable login in all environments
@@ -447,6 +461,10 @@ class AuthRepository {
     String? phoneNumber,
     String? branchId,
   }) async {
+    if (!isDemoMode) {
+      return signUpWithCredentials(role: role, name: name, email: email,
+          password: password, phoneNumber: phoneNumber, assignedBranchId: branchId);
+    }
     final cleanEmail = email.trim().toLowerCase();
     String uid = 'USR-${DateTime.now().millisecondsSinceEpoch}';
 
@@ -529,7 +547,7 @@ class AuthRepository {
     required void Function(String error) onError,
     void Function(PhoneAuthCredential credential)? onAutoVerify,
   }) async {
-    if (phoneNumber.replaceAll(RegExp(r'[^0-9]'), '').endsWith('9876543210')) {
+    if (isDemoMode && phoneNumber.replaceAll(RegExp(r'[^0-9]'), '').endsWith('9876543210')) {
       await Future.delayed(const Duration(milliseconds: 600));
       onCodeSent('demo-verification-id-84210');
       return;
@@ -566,7 +584,7 @@ class AuthRepository {
     required String phoneNumber,
     UserRole role = UserRole.patient,
   }) async {
-    if (verificationId.startsWith('demo-') || smsCode == '123456') {
+    if (isDemoMode && verificationId.startsWith('demo-') && smsCode == '123456') {
       await Future.delayed(const Duration(milliseconds: 500));
       final normPhone = phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
       final seedPhoneMatch = kSeedUsersByPhone[normPhone];
@@ -610,7 +628,7 @@ class AuthRepository {
         id: uid,
         name: userCredential.user?.displayName ?? 'Valued Patient',
         phoneNumber: phoneNumber,
-        role: role,
+        role: UserRole.patient,
         createdAt: DateTime.now(),
       );
       _cachedUser = newUser;

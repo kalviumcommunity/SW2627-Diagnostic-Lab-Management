@@ -327,14 +327,15 @@ class _InstantSearchScreenState extends State<InstantSearchScreen> {
                             style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                           ),
                           const SizedBox(width: 8),
-                          Text(
+                          Flexible(child: Text(
                             '•  ${order.id}',
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 12,
                               color: AppColors.textTertiary,
                               fontFamily: 'monospace',
                             ),
-                          ),
+                          )),
                         ],
                       ),
                     ],

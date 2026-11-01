@@ -111,7 +111,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> verifyOtp(String smsCode) async {
-    if (_verificationId == null && smsCode != '123456') {
+    if (_verificationId == null) {
       _errorMessage = 'No verification ID found. Please request a new OTP.';
       notifyListeners();
       return false;

@@ -51,6 +51,7 @@ class SampleEventModel {
 
   Map<String, dynamic> toMap({bool useServerTimestamp = false}) {
     return {
+      'id': id,
       'sampleBarcode': sampleBarcode,
       'orderId': orderId,
       'fromStatus': fromStatus?.name,
