@@ -55,6 +55,14 @@ class _QcRejectionDialogState extends State<QcRejectionDialog> {
           backgroundColor: AppColors.error,
         ),
       );
+    } else {
+      final err = context.read<LabProvider>().errorMessage ?? 'Unable to record rejection. Please try again.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 

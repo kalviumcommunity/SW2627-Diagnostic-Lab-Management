@@ -111,7 +111,7 @@ class _FrontDeskHomeScreenState extends State<FrontDeskHomeScreen> {
                             Row(
                               children: [
                                 Text(
-                                  user?.name ?? 'Priya Sharma',
+                                  user?.name ?? 'Aryan',
                                   style: const TextStyle(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w800,
@@ -168,41 +168,87 @@ class _FrontDeskHomeScreenState extends State<FrontDeskHomeScreen> {
                 const SizedBox(height: 20),
 
                 // Live Reception Telemetry Bar
-                if (MediaQuery.sizeOf(context).height >= 700)
-                  Row(
-                    children: const [
-                    Expanded(
-                      child: TelemetryMetricCard(
-                        title: 'Today Walk-ins',
-                        value: '42',
-                        subtitle: 'Zero paper slips',
-                        icon: Icons.people_alt_outlined,
-                        accentColor: AppColors.primary,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: TelemetryMetricCard(
-                        title: 'Labels Printed',
-                        value: '128',
-                        subtitle: 'Sterile barcodes',
-                        icon: Icons.qr_code_2_rounded,
-                        accentColor: AppColors.accent,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: TelemetryMetricCard(
-                        title: 'Transit Courier',
-                        value: '8 Batches',
-                        subtitle: 'To Reference Lab',
-                        icon: Icons.local_shipping_outlined,
-                        accentColor: Color(0xFFD97706),
-                      ),
-                    ),
-                    ],
-                  ),
-                if (MediaQuery.sizeOf(context).height >= 700) const SizedBox(height: 28),
+                // Live Reception Telemetry Bar
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isNarrow = constraints.maxWidth < 500;
+                    if (isNarrow) {
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: const [
+                            SizedBox(
+                              width: 150,
+                              child: TelemetryMetricCard(
+                                title: 'Today Walk-ins',
+                                value: '42',
+                                subtitle: 'Zero paper slips',
+                                icon: Icons.people_alt_outlined,
+                                accentColor: AppColors.primary,
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            SizedBox(
+                              width: 150,
+                              child: TelemetryMetricCard(
+                                title: 'Labels Printed',
+                                value: '128',
+                                subtitle: 'Sterile barcodes',
+                                icon: Icons.qr_code_2_rounded,
+                                accentColor: AppColors.accent,
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            SizedBox(
+                              width: 150,
+                              child: TelemetryMetricCard(
+                                title: 'Transit Courier',
+                                value: '8 Batches',
+                                subtitle: 'To Reference Lab',
+                                icon: Icons.local_shipping_outlined,
+                                accentColor: Color(0xFFD97706),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return Row(
+                      children: const [
+                        Expanded(
+                          child: TelemetryMetricCard(
+                            title: 'Today Walk-ins',
+                            value: '42',
+                            subtitle: 'Zero paper slips',
+                            icon: Icons.people_alt_outlined,
+                            accentColor: AppColors.primary,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: TelemetryMetricCard(
+                            title: 'Labels Printed',
+                            value: '128',
+                            subtitle: 'Sterile barcodes',
+                            icon: Icons.qr_code_2_rounded,
+                            accentColor: AppColors.accent,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: TelemetryMetricCard(
+                            title: 'Transit Courier',
+                            value: '8 Batches',
+                            subtitle: 'To Reference Lab',
+                            icon: Icons.local_shipping_outlined,
+                            accentColor: Color(0xFFD97706),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 24),
 
                 // Core Operational Workflows Header
                 Row(

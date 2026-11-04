@@ -1,1 +1,1 @@
-﻿// Screen displaying SLA compliance metrics and turnaround times.
+// Screen displaying SLA compliance metrics and turnaround times.

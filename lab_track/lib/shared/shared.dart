@@ -23,6 +23,7 @@ export 'widgets/cool_chain_badge.dart';
 export 'widgets/specimen_custody_stepper.dart';
 export 'widgets/glowing_action_button.dart';
 export 'widgets/universal_qr_scanner_modal.dart';
+export 'widgets/appointment_qr_pass_modal.dart';
 export '../core/widgets/primary_button.dart';
 export '../core/widgets/loading_widget.dart';
 export '../core/widgets/empty_state.dart';

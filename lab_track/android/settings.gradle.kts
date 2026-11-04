@@ -8,10 +8,31 @@ pluginManagement {
             }
             var sdkPath = properties.getProperty("flutter.sdk")
             if (sdkPath == null || !file(sdkPath).exists()) {
-                sdkPath = System.getenv("FLUTTER_ROOT")
-                    ?: System.getenv("FLUTTER_HOME")
+                val pathSdk = (System.getenv("PATH") ?: "")
+                    .split(java.io.File.pathSeparator)
+                    .map { java.io.File(it) }
+                    .firstNotNullOfOrNull { dir ->
+                        if (java.io.File(dir, "flutter.bat").exists() || java.io.File(dir, "flutter").exists()) {
+                            dir.parentFile?.takeIf { java.io.File(it, "packages/flutter_tools").exists() }?.absolutePath
+                        } else null
+                    }
+                val candidatePaths = listOfNotNull(
+                    pathSdk,
+                    System.getenv("FLUTTER_ROOT"),
+                    System.getenv("FLUTTER_HOME"),
+                    "C:\\flutter",
+                    "C:\\src\\flutter",
+                    "${System.getProperty("user.home")}\\flutter",
+                    "${System.getProperty("user.home")}\\AppData\\Local\\flutter",
+                    "${System.getProperty("user.home")}\\scoop\\apps\\flutter\\current",
+                    "D:\\flutter",
+                    "D:\\src\\flutter"
+                )
+                sdkPath = candidatePaths.firstOrNull { file(it).exists() }
             }
-            require(sdkPath != null) { "flutter.sdk not set in local.properties or FLUTTER_ROOT environment variable" }
+            require(sdkPath != null && file(sdkPath).exists()) {
+                "Flutter SDK could not be found. Please ensure 'flutter.sdk' in 'local.properties' points to your valid Flutter installation path or set the FLUTTER_ROOT environment variable."
+            }
             sdkPath
         }
 
@@ -31,7 +52,7 @@ plugins {
     // START: FlutterFire Configuration
     id("com.google.gms.google-services") version "4.4.2" apply false
     // END: FlutterFire Configuration
-    id("org.jetbrains.kotlin.android") version "2.1.0" apply false
+    id("org.jetbrains.kotlin.android") version "2.3.0" apply false
 }
 
 include(":app")

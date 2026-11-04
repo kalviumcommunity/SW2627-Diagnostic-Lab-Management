@@ -1,1 +1,1 @@
-﻿// Screen for managing lab branches and service areas.
+// Screen for managing lab branches and service areas.

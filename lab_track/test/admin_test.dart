@@ -56,12 +56,12 @@ void main() {
       expect(branches.any((b) => b.id == 'BR-TEST-99'), isTrue);
 
       // Staff duty toggle
-      final updatedStaff = await service.toggleStaffDuty('PH-204');
-      expect(updatedStaff.id, 'PH-204');
+      final updatedStaff = await service.toggleStaffDuty('PH-PRAVEEN');
+      expect(updatedStaff.id, 'PH-PRAVEEN');
 
       // Reallocate staff
       final reallocated = await service.reallocateStaff(
-        staffId: 'PH-204',
+        staffId: 'PH-PRAVEEN',
         targetBranchId: 'branch-spoke-01',
         targetBranchName: 'Downtown Spoke Center #1',
       );
@@ -108,7 +108,7 @@ void main() {
 
       // Header & User Card
       expect(find.text('Admin SLA & TAT Analytics'), findsOneWidget);
-      expect(find.text('Dr. Vikram Malhotra'), findsOneWidget);
+      expect(find.text('Ritu mam'), findsOneWidget);
       expect(find.text('Switch Role'), findsOneWidget);
 
       // Operational KPI cards
@@ -221,9 +221,8 @@ void main() {
       // Verify Staff Management components render
       expect(find.byType(StaffManagementScreen), findsOneWidget);
       expect(find.text('Phlebos in Field'), findsOneWidget);
-      expect(find.text('Rahul Verma'), findsOneWidget);
-      expect(find.text('Priya Sharma'), findsOneWidget);
-      expect(find.text('Dr. Neha Kapoor'), findsOneWidget);
+      expect(find.text('Praveen'), findsOneWidget);
+      expect(find.text('Aryan'), findsWidgets);
     });
 
     testWidgets('LoginScreen renders Google auth and mode switching', (WidgetTester tester) async {

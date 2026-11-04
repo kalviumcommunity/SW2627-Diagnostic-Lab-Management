@@ -90,6 +90,7 @@ class ReportModel {
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'orderId': orderId,
       'sampleBarcode': sampleBarcode,
       'patientId': patientId,

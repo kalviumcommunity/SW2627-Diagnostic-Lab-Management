@@ -1,1 +1,1 @@
-﻿// Screen showing detailed sample data and required analyses.
+// Screen showing detailed sample data and required analyses.

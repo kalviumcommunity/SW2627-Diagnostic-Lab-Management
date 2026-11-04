@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../data/models/report_model.dart';
+import '../../../shared/services/pdf/pdf_report_service.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../providers/lab_provider.dart';
 
@@ -15,8 +16,11 @@ class PathologistSignDialog extends StatefulWidget {
 }
 
 class _PathologistSignDialogState extends State<PathologistSignDialog> {
-  final _pathologistController = TextEditingController(text: 'Dr. Arvind Mehta (MD Path, Reg: MCI-4421)');
-  final _notesController = TextEditingController(text: 'Analytical values verified against biological reference intervals. Quality control calibrators within ±2 SD.');
+  final _pathologistController =
+      TextEditingController(text: 'Dr. Arvind Mehta (MD Path, Reg: MCI-4421)');
+  final _notesController = TextEditingController(
+      text:
+          'Analytical values verified against biological reference intervals. Quality control calibrators within ±2 SD.');
   bool _isSigning = false;
 
   @override
@@ -28,30 +32,39 @@ class _PathologistSignDialogState extends State<PathologistSignDialog> {
 
   void _authorizeReport() async {
     setState(() => _isSigning = true);
-
-    final success = await context.read<LabProvider>().authorizeAndSignReport(
-          reportId: widget.report.id,
-          pathologistName: _pathologistController.text.trim(),
-          clinicalInterpretation: _notesController.text.trim(),
-        );
+    final messenger = ScaffoldMessenger.of(context);
+    final provider = context.read<LabProvider>();
+    final success = await provider.authorizeAndSignReport(
+      reportId: widget.report.id,
+      pathologistName: _pathologistController.text.trim(),
+      clinicalInterpretation: _notesController.text.trim(),
+    );
 
     if (!mounted) return;
     setState(() => _isSigning = false);
 
     if (success) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
-          content: Text('Report ${widget.report.id} digitally signed and authorized. Available for patient download.'),
+          content: Text(
+              'Report ${widget.report.id} digitally signed and authorized. Available for patient download.'),
           backgroundColor: AppColors.success,
         ),
       );
+    } else {
+      messenger.showSnackBar(SnackBar(
+        content: Text(provider.errorMessage ??
+            'Unable to authorize report. Please try again.'),
+        backgroundColor: AppColors.error,
+      ));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final abnormalCount = widget.report.testResults.where((p) => p.isAbnormal).length;
+    final abnormalCount =
+        widget.report.testResults.where((p) => p.isAbnormal).length;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -71,7 +84,8 @@ class _PathologistSignDialogState extends State<PathologistSignDialog> {
                       color: const Color(0xFFDCFCE7),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.verified_rounded, color: AppColors.success, size: 28),
+                    child: const Icon(Icons.verified_rounded,
+                        color: AppColors.success, size: 28),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -80,12 +94,16 @@ class _PathologistSignDialogState extends State<PathologistSignDialog> {
                       children: [
                         const Text(
                           'Pathologist Verification & Digital Signature',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'Report #${widget.report.id} • ${widget.report.patientName} (${widget.report.testName})',
-                          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                          style: const TextStyle(
+                              fontSize: 13, color: AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -103,7 +121,8 @@ class _PathologistSignDialogState extends State<PathologistSignDialog> {
               // Abnormal findings badge
               if (abnormalCount > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFEF3C7),
@@ -112,11 +131,15 @@ class _PathologistSignDialogState extends State<PathologistSignDialog> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline_rounded, color: AppColors.warning, size: 18),
+                      const Icon(Icons.info_outline_rounded,
+                          color: AppColors.warning, size: 18),
                       const SizedBox(width: 10),
                       Text(
                         '$abnormalCount parameter(s) flagged outside standard biological reference range.',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF92400E)),
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF92400E)),
                       ),
                     ],
                   ),
@@ -146,7 +169,9 @@ class _PathologistSignDialogState extends State<PathologistSignDialog> {
                                 p.name,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  fontWeight: p.isAbnormal ? FontWeight.w800 : FontWeight.w600,
+                                  fontWeight: p.isAbnormal
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
                                   color: AppColors.textPrimary,
                                 ),
                               ),
@@ -158,7 +183,9 @@ class _PathologistSignDialogState extends State<PathologistSignDialog> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w800,
-                                  color: p.isAbnormal ? AppColors.error : AppColors.primary,
+                                  color: p.isAbnormal
+                                      ? AppColors.error
+                                      : AppColors.primary,
                                 ),
                               ),
                             ),
@@ -166,13 +193,18 @@ class _PathologistSignDialogState extends State<PathologistSignDialog> {
                               flex: 2,
                               child: Text(
                                 'Ref: ${p.range}',
-                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary),
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: p.isAbnormal ? AppColors.errorLight : AppColors.successLight,
+                                color: p.isAbnormal
+                                    ? AppColors.errorLight
+                                    : AppColors.successLight,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -180,7 +212,9 @@ class _PathologistSignDialogState extends State<PathologistSignDialog> {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w800,
-                                  color: p.isAbnormal ? AppColors.error : AppColors.success,
+                                  color: p.isAbnormal
+                                      ? AppColors.error
+                                      : AppColors.success,
                                 ),
                               ),
                             ),
@@ -194,40 +228,73 @@ class _PathologistSignDialogState extends State<PathologistSignDialog> {
               const SizedBox(height: 14),
 
               // Pathologist Credentials Field
-              const Text('AUTHORIZING PATHOLOGIST *', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+              const Text('AUTHORIZING PATHOLOGIST *',
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textSecondary)),
               const SizedBox(height: 6),
               TextField(
                 controller: _pathologistController,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                style:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.verified_user_rounded, color: AppColors.success, size: 20),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  prefixIcon: const Icon(Icons.verified_user_rounded,
+                      color: AppColors.success, size: 20),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 ),
               ),
               const SizedBox(height: 12),
 
               // Clinical Notes
-              const Text('CLINICAL INTERPRETATION / PATHOLOGIST REMARKS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+              const Text('CLINICAL INTERPRETATION / PATHOLOGIST REMARKS',
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textSecondary)),
               const SizedBox(height: 6),
               TextField(
                 controller: _notesController,
                 maxLines: 2,
                 style: const TextStyle(fontSize: 12),
                 decoration: InputDecoration(
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
                   contentPadding: const EdgeInsets.all(10),
                 ),
               ),
               const SizedBox(height: 20),
 
               // Sign Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 10),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      await PdfReportService.downloadOfficialPdf(
+                        context: context,
+                        report: widget.report,
+                        clinicalNotes: _notesController.text.trim(),
+                      );
+                    },
+                    icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
+                    label: const Text('Preview PDF'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton.icon(
@@ -235,12 +302,19 @@ class _PathologistSignDialogState extends State<PathologistSignDialog> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF15803D),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 22, vertical: 13),
                     ),
                     icon: _isSigning
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
                         : const Icon(Icons.draw_rounded, size: 18),
-                    label: const Text('Electronically Authorize & Release Report', style: TextStyle(fontWeight: FontWeight.w800)),
+                    label: const Text(
+                        'Electronically Authorize & Release Report',
+                        style: TextStyle(fontWeight: FontWeight.w800)),
                   ),
                 ],
               ),

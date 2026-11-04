@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../shared/shared.dart';
+import '../../../shared/services/pdf/pdf_report_service.dart';
 import '../providers/patient_provider.dart';
 
 /// God-Level Diagnostic Reports Screen
@@ -177,7 +178,9 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Row(
+                Wrap(
+                  spacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     const Icon(Icons.hub_outlined, size: 12, color: AppColors.textTertiary),
                     const SizedBox(width: 4),
@@ -199,14 +202,12 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
           ),
           const SizedBox(width: 8),
           if (report.isReady)
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(10),
+            IconButton(
+              tooltip: 'Download PDF',
+              icon: const Icon(Icons.download_rounded, color: AppColors.primary),
+              onPressed: () => PdfReportService.downloadOfficialPdf(
+                context: context, report: report,
               ),
-              child: const Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.primary),
             ),
         ],
       ),
@@ -417,16 +418,11 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
 
               const SizedBox(height: 14),
               GlowingActionButton(
-                label: 'Download Official PDF Report',
+                label: 'View & Download Official PDF Report',
                 icon: Icons.picture_as_pdf_rounded,
                 onPressed: () {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('PDF download is not available in this build.'),
-                      backgroundColor: AppColors.warning,
-                    ),
-                  );
+                  _showOfficialReportCertificate(this.context, report);
                 },
               ),
               const SizedBox(height: 8),
@@ -434,6 +430,279 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
           ),
         );
       },
+    );
+  }
+
+  void _showOfficialReportCertificate(BuildContext context, ReportModel report) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 580, maxHeight: 720),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header ribbon
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: const BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.verified_user_rounded, color: Colors.white, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'APEX REFERENCE LABORATORIES',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 0.8),
+                          ),
+                          Text(
+                            'NABL & ISO 15189 Certified Diagnostic Report',
+                            style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 11.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Colors.white),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Report Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Patient & Sample Meta Box
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppColors.cardSubtle,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('PATIENT NAME', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.textTertiary)),
+                                    const SizedBox(height: 2),
+                                    Text(report.patientName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.textPrimary)),
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    const Text('SPECIMEN BARCODE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.textTertiary)),
+                                    const SizedBox(height: 2),
+                                    Text(report.sampleBarcode, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.primary)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const Divider(height: 18),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('INVESTIGATION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.textTertiary)),
+                                    const SizedBox(height: 2),
+                                    Text(report.testName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: AppColors.textPrimary)),
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    const Text('AUTHORIZATION DATE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.textTertiary)),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      DateFormat.yMMMd().format(report.verifiedAt ?? DateTime.now()),
+                                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: AppColors.textSecondary),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      const Text(
+                        'LABORATORY INVESTIGATION FINDINGS',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.8, color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Table Header
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: const [
+                            Expanded(flex: 3, child: Text('PARAMETER', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.textSecondary))),
+                            Expanded(flex: 2, child: Text('RESULT', textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.textSecondary))),
+                            Expanded(flex: 3, child: Text('BIOLOGICAL REF.', textAlign: TextAlign.right, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.textSecondary))),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+
+                      // Parameters
+                      ...report.parameters.map((p) => Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                        decoration: BoxDecoration(
+                          border: Border(bottom: BorderSide(color: AppColors.divider)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Text(p.name, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    p.value,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      color: p.isAbnormal ? AppColors.warningDark : AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  if (p.unit != null && p.unit!.isNotEmpty)
+                                    Text(' ${p.unit}', style: const TextStyle(fontSize: 10, color: AppColors.textTertiary)),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                p.range,
+                                textAlign: TextAlign.right,
+                                style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                      const SizedBox(height: 24),
+
+                      // Digital Signature Stamp
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: const BoxDecoration(
+                                color: AppColors.successLight,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.draw_rounded, color: AppColors.successDark, size: 22),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Digitally Signed by ${report.pathologistName ?? "Aryan, Lab Specialist"}',
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.successDark),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  const Text(
+                                    'Consultant Pathologist • Medical Council Reg #MED-74921',
+                                    style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Action buttons footer
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          await PdfReportService.downloadOfficialPdf(
+                            context: context,
+                            report: report,
+                          );
+                        },
+                        icon: const Icon(Icons.print_rounded, size: 18),
+                        label: const Text('Print Report'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          await PdfReportService.downloadOfficialPdf(
+                            context: context,
+                            report: report,
+                          );
+                        },
+                        icon: const Icon(Icons.download_rounded, size: 18),
+                        label: const Text('Save PDF'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -128,24 +128,6 @@
       "languageVersion": "3.6"
     },
     {
-      "name": "cloud_functions",
-      "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/cloud_functions-6.5.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.6"
-    },
-    {
-      "name": "cloud_functions_platform_interface",
-      "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/cloud_functions_platform_interface-6.0.7",
-      "packageUri": "lib/",
-      "languageVersion": "3.6"
-    },
-    {
-      "name": "cloud_functions_web",
-      "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/cloud_functions_web-5.1.13",
-      "packageUri": "lib/",
-      "languageVersion": "3.6"
-    },
-    {
       "name": "code_assets",
       "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/code_assets-1.2.1",
       "packageUri": "lib/",
@@ -296,6 +278,12 @@
       "languageVersion": "3.8"
     },
     {
+      "name": "flutter_driver",
+      "rootUri": "file:///C:/src/flutter/packages/flutter_driver",
+      "packageUri": "lib/",
+      "languageVersion": "3.11"
+    },
+    {
       "name": "flutter_lints",
       "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_lints-6.0.0",
       "packageUri": "lib/",
@@ -316,6 +304,12 @@
     {
       "name": "flutter_web_plugins",
       "rootUri": "file:///C:/src/flutter/packages/flutter_web_plugins",
+      "packageUri": "lib/",
+      "languageVersion": "3.11"
+    },
+    {
+      "name": "fuchsia_remote_debug_protocol",
+      "rootUri": "file:///C:/src/flutter/packages/fuchsia_remote_debug_protocol",
       "packageUri": "lib/",
       "languageVersion": "3.11"
     },
@@ -414,6 +408,12 @@
       "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/http_parser-4.1.2",
       "packageUri": "lib/",
       "languageVersion": "3.4"
+    },
+    {
+      "name": "integration_test",
+      "rootUri": "file:///C:/src/flutter/packages/integration_test",
+      "packageUri": "lib/",
+      "languageVersion": "3.11"
     },
     {
       "name": "intl",
@@ -602,6 +602,42 @@
       "languageVersion": "3.2"
     },
     {
+      "name": "permission_handler",
+      "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/permission_handler-11.3.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.15"
+    },
+    {
+      "name": "permission_handler_android",
+      "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/permission_handler_android-12.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "permission_handler_apple",
+      "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/permission_handler_apple-9.6.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "permission_handler_html",
+      "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/permission_handler_html-0.1.4+1",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "permission_handler_platform_interface",
+      "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/permission_handler_platform_interface-4.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "permission_handler_windows",
+      "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/permission_handler_windows-0.2.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
       "name": "petitparser",
       "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/petitparser-7.0.2",
       "packageUri": "lib/",
@@ -626,6 +662,12 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "process",
+      "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/process-5.0.6",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
       "name": "provider",
       "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/provider-6.1.5+1",
       "packageUri": "lib/",
@@ -642,6 +684,18 @@
       "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/pubspec_parse-1.6.0",
       "packageUri": "lib/",
       "languageVersion": "3.8"
+    },
+    {
+      "name": "qr",
+      "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/qr-3.0.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "qr_flutter",
+      "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/qr_flutter-4.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.19"
     },
     {
       "name": "record_use",
@@ -732,6 +786,12 @@
       "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/string_scanner-1.4.1",
       "packageUri": "lib/",
       "languageVersion": "3.1"
+    },
+    {
+      "name": "sync_http",
+      "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/sync_http-0.3.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
     },
     {
       "name": "synchronized",
@@ -846,6 +906,12 @@
       "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/web_socket_channel-3.0.3",
       "packageUri": "lib/",
       "languageVersion": "3.3"
+    },
+    {
+      "name": "webdriver",
+      "rootUri": "file:///C:/Users/rusta/AppData/Local/Pub/Cache/hosted/pub.dev/webdriver-3.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
     },
     {
       "name": "win32",

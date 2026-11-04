@@ -22,7 +22,7 @@ class _BookCollectionScreenState extends State<BookCollectionScreen> {
   void initState() {
     super.initState();
     final user = context.read<AuthProvider>().currentUser;
-    _nameController = TextEditingController(text: user?.name ?? 'John Doe');
+    _nameController = TextEditingController(text: user?.name ?? 'Virender');
     _phoneController = TextEditingController(text: user?.phoneNumber ?? '+91 98765 43210');
     _addressController = TextEditingController(
       text: user?.address ?? 'Apartment 4B, Sunrise Residency, Sector 14',

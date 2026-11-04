@@ -46,8 +46,8 @@ class QcInspectionModel {
       patientName: map['patientName']?.toString() ?? '',
       testName: map['testName']?.toString() ?? '',
       rejectionReason: map['rejectionReason']?.toString() ?? 'Unspecified Pre-analytical Non-compliance',
-      technicianId: map['technicianId']?.toString() ?? 'LAB-501',
-      technicianName: map['technicianName']?.toString() ?? 'Dr. Sarah Chen',
+      technicianId: map['technicianId']?.toString() ?? 'LAB-ARYAN',
+      technicianName: map['technicianName']?.toString() ?? 'Aryan',
       rejectedAt: map['rejectedAt'] != null
           ? DateTime.tryParse(map['rejectedAt'].toString()) ?? DateTime.now()
           : DateTime.now(),

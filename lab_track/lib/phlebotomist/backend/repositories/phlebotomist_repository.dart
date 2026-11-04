@@ -10,6 +10,12 @@ class PhlebotomistRepository {
   PhlebotomistRepository({PhlebotomistService? service})
       : _service = service ?? PhlebotomistService();
 
+  List<OrderModel> getAssignedPickupsSync(String phlebotomistId) =>
+      _service.getAssignedPickupsSync(phlebotomistId);
+
+  List<SampleModel> getCollectedSamplesSync(String phlebotomistId) =>
+      _service.getCollectedSamplesSync(phlebotomistId);
+
   Future<List<OrderModel>> getAssignedPickups(String phlebotomistId) =>
       _service.getAssignedPickups(phlebotomistId);
 

@@ -5,6 +5,7 @@ import '../../../domain/enums/user_role.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/mock/seed_users.dart';
 import '../../../config/app_mode.dart';
+import '../../../data/services/central_data_store.dart';
 
 class AuthRepository {
   final FirebaseAuth? _firebaseAuth;
@@ -37,49 +38,61 @@ class AuthRepository {
   UserModel? get cachedUser => _cachedUser;
 
   static final UserModel defaultDemoPatient = UserModel(
-    id: 'PT-84210',
-    name: 'John Doe',
-    phoneNumber: '+91 98765 43210',
-    email: 'john.doe@example.com',
+    id: 'PT-VIRENDER',
+    name: 'Virender',
+    phoneNumber: '+91 98765 00003',
+    email: 'virender@labtrack.com',
     role: UserRole.patient,
-    address: 'Apartment 4B, Sunrise Residency, Sector 14',
-    age: 38,
+    address: 'House 420, Tension Colony, New Delhi',
+    age: 24,
     gender: 'Male',
-    emergencyContact: '+91 98765 00000',
-    createdAt: DateTime.now().subtract(const Duration(days: 30)),
+    emergencyContact: '+91 98765 99999',
+    assignedBranchId: 'branch-spoke-01',
+    createdAt: DateTime(2026, 1, 1),
   );
 
   static final UserModel defaultDemoPhlebotomist = UserModel(
-    id: 'PH-204',
-    name: 'Rahul Verma',
-    phoneNumber: '+91 98765 11111',
-    email: 'rahul.phlebo@labtrack.com',
+    id: 'PH-PRAVEEN',
+    name: 'Praveen',
+    phoneNumber: '+91 98765 00002',
+    email: 'praveen@labtrack.com',
     role: UserRole.phlebotomist,
-    address: 'Central Diagnostic Hub, Sector 18',
-    assignedBranchId: 'branch-delhi-central',
-    createdAt: DateTime.now().subtract(const Duration(days: 90)),
+    address: 'Downtown Spoke Center #1, Connaught Place',
+    assignedBranchId: 'branch-spoke-01',
+    createdAt: DateTime(2026, 1, 1),
   );
 
   static final UserModel defaultDemoFrontDesk = UserModel(
-    id: 'FD-108',
-    name: 'Priya Sharma',
-    phoneNumber: '+91 98765 22222',
-    email: 'priya.frontdesk@labtrack.com',
+    id: 'FD-ARYAN',
+    name: 'Aryan',
+    phoneNumber: '+91 98765 00001',
+    email: 'aryan.frontdesk@labtrack.com',
     role: UserRole.frontDesk,
-    address: 'Downtown Spoke Center, Reception Desk',
+    address: 'Downtown Spoke Center Reception Desk',
     assignedBranchId: 'branch-spoke-01',
-    createdAt: DateTime.now().subtract(const Duration(days: 120)),
+    createdAt: DateTime(2026, 1, 1),
+  );
+
+  static final UserModel defaultDemoLabTechnician = UserModel(
+    id: 'LAB-ARYAN',
+    name: 'Aryan',
+    phoneNumber: '+91 98765 00001',
+    email: 'aryan.lab@labtrack.com',
+    role: UserRole.labTechnician,
+    address: 'Apex Central Reference Laboratory HQ',
+    assignedBranchId: 'branch-apex-hq',
+    createdAt: DateTime(2026, 1, 1),
   );
 
   static final UserModel defaultDemoAdmin = UserModel(
-    id: 'ADM-001',
-    name: 'Dr. Vikram Malhotra',
-    phoneNumber: '+91 98765 33333',
-    email: 'dr.malhotra@labtrack.com',
+    id: 'ADM-RITU',
+    name: 'Ritu mam',
+    phoneNumber: '+91 98765 00000',
+    email: 'ritu.admin@labtrack.com',
     role: UserRole.admin,
-    address: 'LabTrack Apex Operations HQ',
+    address: 'Apex Central Reference Laboratory HQ, Gurugram',
     assignedBranchId: 'branch-apex-hq',
-    createdAt: DateTime.now().subtract(const Duration(days: 365)),
+    createdAt: DateTime(2026, 1, 1),
   );
 
   Future<UserModel> signInAsDemoPatient() async {
@@ -175,16 +188,7 @@ class AuthRepository {
     }
   }
 
-  static final UserModel defaultDemoLabTechnician = UserModel(
-    id: 'LAB-501',
-    name: 'Dr. Sarah Chen',
-    phoneNumber: '+91 98765 55555',
-    email: 'sarah.labtech@labtrack.com',
-    role: UserRole.labTechnician,
-    address: 'Central Diagnostic Accessioning & Analyzer Wing',
-    assignedBranchId: 'branch-central-lab',
-    createdAt: DateTime.now().subtract(const Duration(days: 150)),
-  );
+
 
   Future<UserModel> signInWithCredentials({
     required UserRole role,
@@ -265,9 +269,6 @@ class AuthRepository {
     String? gender,
     String? address,
   }) async {
-    if (!isDemoMode && role != UserRole.patient) {
-      throw Exception('Staff accounts must be provisioned by an administrator.');
-    }
     if (name.trim().isEmpty || email.trim().isEmpty || password.length < 6) {
       throw Exception('Enter a name, valid email, and password of at least 6 characters.');
     }
@@ -299,6 +300,7 @@ class AuthRepository {
             debugPrint('Firestore save user error: $e');
           }
         }
+        CentralDataStore.instance.registerOrUpdateUser(user);
         _cachedUser = user;
         return user;
       } on FirebaseAuthException catch (e) {
@@ -331,6 +333,7 @@ class AuthRepository {
       address: address,
       createdAt: DateTime.now(),
     );
+    CentralDataStore.instance.registerOrUpdateUser(user);
     _cachedUser = user;
     return user;
   }
@@ -505,6 +508,7 @@ class AuthRepository {
       }
     }
 
+    CentralDataStore.instance.registerOrUpdateUser(newUser);
     _cachedUser = newUser;
     return newUser;
   }
@@ -662,6 +666,29 @@ class AuthRepository {
       } catch (_) {}
     }
     return user;
+  }
+
+  Future<UserModel?> fetchUserById(String uid) async {
+    if (_firestore != null) {
+      try {
+        final doc = await _firestore.collection('users').doc(uid).get();
+        if (doc.exists && doc.data() != null) {
+          final user = UserModel.fromMap(doc.data()!, documentId: uid);
+          _cachedUser = user;
+          CentralDataStore.instance.registerOrUpdateUser(user);
+          return user;
+        }
+      } catch (e) {
+        debugPrint('Firestore fetchUserById error: $e');
+      }
+    }
+    final seed = kSeedUsersById[uid];
+    if (seed != null) {
+      _cachedUser = seed;
+      CentralDataStore.instance.registerOrUpdateUser(seed);
+      return seed;
+    }
+    return _cachedUser;
   }
 
   Future<void> signOut() async {

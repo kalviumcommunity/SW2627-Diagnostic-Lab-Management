@@ -163,6 +163,7 @@ class SampleModel {
           );
 
     return {
+      'barcode': barcode,
       'orderId': orderId,
       'patientId': patientId,
       'patientName': patientName,

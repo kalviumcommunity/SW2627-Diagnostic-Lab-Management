@@ -5,7 +5,6 @@ import '../../../data/models/report_model.dart';
 import '../../../data/services/central_data_store.dart';
 import '../../backend/models/patient_booking_request.dart';
 import '../../backend/repositories/patient_repository.dart';
-import '../../../config/app_mode.dart';
 
 /// Patient State Manager
 /// Auto-syncs live updates from Phlebotomist, Front Desk, Lab, and Pathologist.
@@ -30,24 +29,35 @@ class PatientProvider extends ChangeNotifier {
 
   PatientProvider({PatientRepository? repository})
       : _repository = repository ?? PatientRepository() {
-    // Cross-role reactive sync
+    _patientId = 'PT-VIRENDER';
+    _orders.addAll(_repository.getInitialOrders('PT-VIRENDER'));
+    _activeSample = _repository.getInitialSample('PT-VIRENDER');
+    _reports = _repository.getInitialReports('PT-VIRENDER');
     CentralDataStore.instance.addListener(_onStoreChanged);
-    if (isDemoMode) setPatient('PT-84210');
   }
 
   void setPatient(String? patientId) {
-    if (_patientId == patientId) return;
-    _patientId = patientId;
+    final effectiveId = (patientId != null && patientId.isNotEmpty) ? patientId : 'PT-VIRENDER';
+    if (_patientId == effectiveId && _orders.isNotEmpty) return;
+    _patientId = effectiveId;
     _refreshGeneration++;
     _activeSample = null;
     _reports = [];
     _orders.clear();
-    if (patientId != null) refreshPatientData(patientId);
+    _orders.addAll(_repository.getInitialOrders(effectiveId));
+    _activeSample = _repository.getInitialSample(effectiveId);
+    _reports = _repository.getInitialReports(effectiveId);
+    refreshPatientData(effectiveId);
   }
 
   void _onStoreChanged() {
-    final patientId = _patientId;
-    if (patientId != null) refreshPatientData(patientId);
+    final patientId = _patientId ?? 'PT-VIRENDER';
+    _activeSample = _repository.getInitialSample(patientId);
+    _reports = _repository.getInitialReports(patientId);
+    final updatedOrders = _repository.getInitialOrders(patientId);
+    _orders.clear();
+    _orders.addAll(updatedOrders);
+    notifyListeners();
   }
 
   @override
@@ -66,9 +76,12 @@ class PatientProvider extends ChangeNotifier {
     try {
       final sample = await _repository.getActiveSample(patientId);
       final reportList = await _repository.getReports(patientId);
+      final orderList = await _repository.getOrders(patientId);
       if (_disposed || generation != _refreshGeneration || patientId != _patientId) return;
       _activeSample = sample;
       _reports = reportList;
+      _orders.clear();
+      _orders.addAll(orderList);
       _errorMessage = null;
     } catch (e) {
       if (_disposed || generation != _refreshGeneration) return;
@@ -89,6 +102,7 @@ class PatientProvider extends ChangeNotifier {
 
     try {
       final order = await _repository.bookTest(request);
+      _orders.removeWhere((o) => o.id == order.id);
       _orders.insert(0, order);
       await refreshPatientData(request.patientId);
       return order;

@@ -1,1 +1,1 @@
-﻿// Screen for managing tests and analyzer processing runs.
+// Screen for managing tests and analyzer processing runs.

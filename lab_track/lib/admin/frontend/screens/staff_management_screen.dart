@@ -19,8 +19,13 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
   void _showReallocateDialog(BuildContext context, StaffAllocationModel staff) {
     final provider = context.read<AdminProvider>();
     final branches = provider.branches;
-    String selectedBranchId = staff.assignedBranchId;
-    String selectedBranchName = staff.assignedBranchName;
+    final bool branchExists = branches.any((b) => b.id == staff.assignedBranchId);
+    String selectedBranchId = branchExists
+        ? staff.assignedBranchId
+        : (branches.isNotEmpty ? branches.first.id : staff.assignedBranchId);
+    String selectedBranchName = branchExists
+        ? staff.assignedBranchName
+        : (branches.isNotEmpty ? branches.first.name : staff.assignedBranchName);
 
     showModalBottomSheet(
       context: context,
@@ -72,7 +77,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                     }).toList(),
                     onChanged: (val) {
                       if (val != null) {
-                        final b = branches.firstWhere((element) => element.id == val);
+                        final b = branches.firstWhere((element) => element.id == val, orElse: () => branches.first);
                         setModalState(() {
                           selectedBranchId = b.id;
                           selectedBranchName = b.name;
@@ -235,7 +240,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                     items: branches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name, overflow: TextOverflow.ellipsis))).toList(),
                     onChanged: (val) {
                       if (val != null) {
-                        final b = branches.firstWhere((e) => e.id == val);
+                        final b = branches.firstWhere((e) => e.id == val, orElse: () => branches.first);
                         setModalState(() {
                           selectedBranchId = b.id;
                           selectedBranchName = b.name;
@@ -346,13 +351,17 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildFilterChip('All Staff', null),
+                      _buildFilterChip('All Staff & Users', null),
                       const SizedBox(width: 6),
                       _buildFilterChip('Phlebotomists', UserRole.phlebotomist),
                       const SizedBox(width: 6),
                       _buildFilterChip('Lab Techs', UserRole.labTechnician),
                       const SizedBox(width: 6),
                       _buildFilterChip('Front Desk', UserRole.frontDesk),
+                      const SizedBox(width: 6),
+                      _buildFilterChip('Patients', UserRole.patient),
+                      const SizedBox(width: 6),
+                      _buildFilterChip('Admins', UserRole.admin),
                     ],
                   ),
                 ),
@@ -380,7 +389,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'STAFF ROSTER (${staff.length})',
+                'STAFF & USER ROSTER (${staff.length})',
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,

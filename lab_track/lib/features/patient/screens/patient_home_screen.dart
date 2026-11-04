@@ -68,7 +68,7 @@ class _PatientDashboardTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final user = authProvider.currentUser;
-    final patientName = user?.name ?? 'John Doe';
+    final patientName = user?.name ?? 'Virender';
     final patientId = user?.id ?? 'PT-84210';
 
     return Scaffold(

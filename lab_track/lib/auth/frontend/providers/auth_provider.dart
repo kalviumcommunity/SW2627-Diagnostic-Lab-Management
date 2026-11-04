@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../domain/enums/user_role.dart';
 import '../../../data/models/user_model.dart';
 import '../../backend/repositories/auth_repository.dart';
@@ -12,9 +14,28 @@ class AuthProvider extends ChangeNotifier {
   String? _verificationId;
   String? _pendingPhoneNumber;
   UserRole _pendingRole = UserRole.patient;
+  StreamSubscription<User?>? _authSubscription;
 
   AuthProvider({AuthRepository? authRepository})
-      : _authRepository = authRepository ?? AuthRepository();
+      : _authRepository = authRepository ?? AuthRepository() {
+    _initAuthStateListener();
+  }
+
+  void _initAuthStateListener() {
+    try {
+      _authSubscription = FirebaseAuth.instance.authStateChanges().listen((User? firebaseUser) async {
+        if (firebaseUser != null && _currentUser == null) {
+          final user = await _authRepository.fetchUserById(firebaseUser.uid);
+          if (user != null) {
+            _currentUser = user;
+            notifyListeners();
+          }
+        }
+      });
+    } catch (e) {
+      debugPrint('Auth state listener notice: $e');
+    }
+  }
 
   UserModel? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
@@ -138,7 +159,6 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
-
   }
 
   Future<bool> loginWithCredentials({
@@ -214,5 +234,11 @@ class AuthProvider extends ChangeNotifier {
     _pendingPhoneNumber = null;
     _pendingRole = UserRole.patient;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
   }
 }

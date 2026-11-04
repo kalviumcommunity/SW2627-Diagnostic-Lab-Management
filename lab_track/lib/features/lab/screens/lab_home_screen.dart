@@ -1,1 +1,1 @@
-﻿// Home dashboard screen for lab technicians.
+// Home dashboard screen for lab technicians.

@@ -120,7 +120,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(
-                    hintText: 'e.g. John Doe',
+                    hintText: 'e.g. Virender',
                     prefixIcon: Icon(Icons.person_outline),
                   ),
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter your name' : null,

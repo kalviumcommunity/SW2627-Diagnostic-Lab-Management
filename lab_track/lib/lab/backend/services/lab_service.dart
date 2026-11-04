@@ -43,7 +43,7 @@ class LabService {
     required String barcode,
     String? rackId,
     String? notes,
-    String technicianName = 'Dr. Sarah Chen (#LAB-501)',
+    String technicianName = 'Aryan (#LAB-ARYAN)',
   }) async {
     await Future.delayed(const Duration(milliseconds: 200));
     _store.accessionSpecimen(
@@ -69,7 +69,7 @@ class LabService {
     required String barcode,
     required String rejectionReason,
     String? clinicalNotes,
-    String technicianName = 'Dr. Sarah Chen (#LAB-501)',
+    String technicianName = 'Aryan (#LAB-ARYAN)',
   }) async {
     await Future.delayed(const Duration(milliseconds: 200));
     return _store.recordQcRejection(

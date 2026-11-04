@@ -1,1 +1,1 @@
-﻿// Screen for confirming sample collection and verification.
+// Screen for confirming sample collection and verification.

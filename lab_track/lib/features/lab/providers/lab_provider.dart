@@ -1,1 +1,1 @@
-﻿// Provider managing lab workflows and sample batch processing.
+// Provider managing lab workflows and sample batch processing.

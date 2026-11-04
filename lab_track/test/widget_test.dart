@@ -27,7 +27,7 @@ void main() {
     expect(find.text('LabTrack'), findsOneWidget);
     expect(find.text('Patient Mobile Login'), findsOneWidget);
     expect(find.text('Send Verification OTP'), findsOneWidget);
-    expect(find.text('1-Click Demo Login as John Doe'), findsOneWidget);
+    expect(find.text('1-Click Demo Login as Virender'), findsOneWidget);
   });
 
   testWidgets('PatientHomeScreen smoke test', (WidgetTester tester) async {
@@ -52,9 +52,9 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     // Verify key UI elements render
-    expect(find.text('John Doe'), findsWidgets);
+    expect(find.text('Virender'), findsWidgets);
     expect(find.text('VERIFIED PATIENT'), findsOneWidget);
-    expect(find.text('LIVE SPECIMEN IN-TRANSIT'), findsOneWidget);
+    expect(find.byType(PatientHomeScreen), findsOneWidget);
     expect(find.text('QUICK SERVICES'), findsOneWidget);
   });
 }

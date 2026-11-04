@@ -1,1 +1,1 @@
-﻿// Screen showing detailed order info and required vials.
+// Screen showing detailed order info and required vials.

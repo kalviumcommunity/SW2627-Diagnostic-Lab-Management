@@ -6,7 +6,6 @@ import '../../backend/models/phlebotomist_collection_request.dart';
 import '../../backend/repositories/phlebotomist_repository.dart';
 
 import '../../../data/services/central_data_store.dart';
-import '../../../config/app_mode.dart';
 
 /// State management for the Field Phlebotomist App (pickups, route, barcode scanning, cold-chain).
 class PhlebotomistProvider extends ChangeNotifier {
@@ -29,7 +28,7 @@ class PhlebotomistProvider extends ChangeNotifier {
   PhlebotomistProvider({PhlebotomistRepository? repository})
       : _repository = repository ?? PhlebotomistRepository() {
     CentralDataStore.instance.addListener(_onStoreChanged);
-    if (isDemoMode) setPhlebotomist('PH-204');
+    _onStoreChanged();
   }
 
   void setPhlebotomist(String? id) {
@@ -38,11 +37,14 @@ class PhlebotomistProvider extends ChangeNotifier {
     _orders = [];
     _collectedSamples = [];
     _selectedOrder = null;
-    if (id != null) refreshPickups(id);
+    refreshPickups(id ?? 'PH-PRAVEEN');
   }
 
   void _onStoreChanged() {
-    if (_phlebotomistId != null) refreshPickups(_phlebotomistId!);
+    final targetId = _phlebotomistId ?? 'PH-PRAVEEN';
+    _orders = _repository.getAssignedPickupsSync(targetId);
+    _collectedSamples = _repository.getCollectedSamplesSync(targetId);
+    notifyListeners();
   }
 
   @override
@@ -52,6 +54,7 @@ class PhlebotomistProvider extends ChangeNotifier {
   }
 
   // Getters
+  String? get phlebotomistId => _phlebotomistId;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
@@ -148,14 +151,15 @@ class PhlebotomistProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> refreshPickups([String phlebotomistId = 'PH-204']) async {
+  Future<void> refreshPickups([String? phlebotomistId]) async {
+    final targetId = phlebotomistId ?? _phlebotomistId ?? 'PH-PRAVEEN';
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final pickupList = await _repository.getAssignedPickups(phlebotomistId);
-      final sampleList = await _repository.getCollectedSamples(phlebotomistId);
+      final pickupList = await _repository.getAssignedPickups(targetId);
+      final sampleList = await _repository.getCollectedSamples(targetId);
       _orders = pickupList;
       _collectedSamples = sampleList;
     } catch (e) {
@@ -168,6 +172,35 @@ class PhlebotomistProvider extends ChangeNotifier {
 
   Future<bool> isBarcodeAlreadyUsed(String barcode) async {
     return _repository.isBarcodeAlreadyUsed(barcode);
+  }
+
+  Future<OrderModel?> verifyPatientDoorstepPass({
+    required String orderId,
+    String? phlebotomistId,
+    String? phlebotomistName,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final order = CentralDataStore.instance.verifyPatientDoorstepPass(
+        orderId: orderId,
+        phlebotomistId: phlebotomistId ?? _phlebotomistId ?? 'PH-PRAVEEN',
+        phlebotomistName: phlebotomistName ?? 'Praveen',
+      );
+      if (order != null) {
+        _selectedOrder = order;
+        _successMessage = 'Doorstep identity confirmed for ' + order.patientName;
+      }
+      return order;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<SampleModel?> confirmCollection(PhlebotomistCollectionRequest request) async {

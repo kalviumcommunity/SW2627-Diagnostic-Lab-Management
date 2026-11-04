@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/report_model.dart';
+import '../../../shared/services/pdf/pdf_report_service.dart';
 import '../../../shared/theme/app_colors.dart';
 
 class ReportModal extends StatelessWidget {
@@ -396,12 +397,11 @@ class ReportModal extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Receipt printing is not available in this build.'),
-                          backgroundColor: AppColors.accent,
-                        ),
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      await PdfReportService.downloadOfficialPdf(
+                        context: context,
+                        report: report,
                       );
                     },
                     icon: const Icon(Icons.receipt_long_rounded, size: 18),
@@ -414,12 +414,11 @@ class ReportModal extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('PDF printing is not available in this build.'),
-                          backgroundColor: AppColors.primary,
-                        ),
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      await PdfReportService.downloadOfficialPdf(
+                        context: context,
+                        report: report,
                       );
                     },
                     icon: const Icon(Icons.print_rounded, size: 18),

@@ -1,1 +1,1 @@
-﻿// Screen for managing staff accounts, roles, and branch assignments.
+// Screen for managing staff accounts, roles, and branch assignments.

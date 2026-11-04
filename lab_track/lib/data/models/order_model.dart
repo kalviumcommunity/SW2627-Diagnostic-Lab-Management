@@ -18,6 +18,7 @@ class OrderModel {
   final String? assignedPhlebotomistId;
   final String? assignedPhlebotomistName;
   final String? specialInstructions;
+  final DateTime? doorstepVerifiedAt;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -38,6 +39,7 @@ class OrderModel {
     this.assignedPhlebotomistId,
     this.assignedPhlebotomistName,
     this.specialInstructions,
+    this.doorstepVerifiedAt,
     required this.createdAt,
     this.updatedAt,
   });
@@ -59,6 +61,7 @@ class OrderModel {
     String? assignedPhlebotomistId,
     String? assignedPhlebotomistName,
     String? specialInstructions,
+    DateTime? doorstepVerifiedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -79,6 +82,7 @@ class OrderModel {
       assignedPhlebotomistId: assignedPhlebotomistId ?? this.assignedPhlebotomistId,
       assignedPhlebotomistName: assignedPhlebotomistName ?? this.assignedPhlebotomistName,
       specialInstructions: specialInstructions ?? this.specialInstructions,
+      doorstepVerifiedAt: doorstepVerifiedAt ?? this.doorstepVerifiedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -86,6 +90,7 @@ class OrderModel {
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'patientId': patientId,
       'patientName': patientName,
       'patientPhone': patientPhone,
@@ -101,6 +106,7 @@ class OrderModel {
       'assignedPhlebotomistId': assignedPhlebotomistId,
       'assignedPhlebotomistName': assignedPhlebotomistName,
       'specialInstructions': specialInstructions,
+      'doorstepVerifiedAt': doorstepVerifiedAt != null ? Timestamp.fromDate(doorstepVerifiedAt!) : null,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null
           ? Timestamp.fromDate(updatedAt!)
@@ -115,6 +121,14 @@ class OrderModel {
       if (val is DateTime) return val;
       if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
       return DateTime.now();
+    }
+
+    DateTime? parseNullableDate(dynamic val) {
+      if (val == null) return null;
+      if (val is Timestamp) return val.toDate();
+      if (val is DateTime) return val;
+      if (val is String) return DateTime.tryParse(val);
+      return null;
     }
 
     return OrderModel(
@@ -136,6 +150,7 @@ class OrderModel {
       assignedPhlebotomistId: map['assignedPhlebotomistId']?.toString(),
       assignedPhlebotomistName: map['assignedPhlebotomistName']?.toString(),
       specialInstructions: map['specialInstructions']?.toString(),
+      doorstepVerifiedAt: parseNullableDate(map['doorstepVerifiedAt']),
       createdAt: parseDate(map['createdAt']),
       updatedAt: map['updatedAt'] != null ? parseDate(map['updatedAt']) : null,
     );
