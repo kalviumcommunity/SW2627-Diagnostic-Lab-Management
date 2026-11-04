@@ -30,6 +30,9 @@ class PatientApiService {
     final orderId = 'ORD-${const Uuid().v4().replaceAll('-', '').toUpperCase()}';
     final sampleBarcode = 'SMP-${const Uuid().v4().replaceAll('-', '').toUpperCase()}';
 
+    const assignedPhlebId = 'PH-PRAVEEN';
+    const assignedPhlebName = 'Praveen';
+
     final order = OrderModel(
       id: orderId,
       patientId: request.patientId,
@@ -44,8 +47,8 @@ class PatientApiService {
       branchName: request.branchName.isNotEmpty ? request.branchName : 'Downtown Spoke Center #1',
       status: OrderStatus.confirmed,
       sampleBarcodes: [sampleBarcode],
-      assignedPhlebotomistId: 'PH-204',
-      assignedPhlebotomistName: 'Rahul Verma',
+      assignedPhlebotomistId: assignedPhlebId,
+      assignedPhlebotomistName: assignedPhlebName,
       specialInstructions: request.notes,
       createdAt: now,
     );
@@ -61,8 +64,8 @@ class PatientApiService {
       tubeType: 'EDTA Purple Top + SST Gold Top',
       status: SampleStatus.booked,
       currentBranchName: request.branchName.isNotEmpty ? request.branchName : 'Downtown Spoke Center #1',
-      assignedPhlebotomistId: 'PH-204',
-      assignedPhlebotomistName: 'Rahul Verma',
+      assignedPhlebotomistId: assignedPhlebId,
+      assignedPhlebotomistName: assignedPhlebName,
       createdAt: now,
       events: [
         SampleEventModel(
@@ -79,10 +82,25 @@ class PatientApiService {
       ],
     );
 
-    _store.createOrder(order);
     _store.saveSample(sample);
+    _store.createOrder(order);
 
     return order;
+  }
+
+  /// GET /api/patient/orders?patientId=...
+  Future<List<OrderModel>> getPatientOrders(String patientId) async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    final orders = _store.orders.where((o) => o.patientId == patientId).toList();
+    orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return orders;
+  }
+
+  /// Synchronous retrieval of patient orders for instant UI hydration
+  List<OrderModel> getInitialOrders(String patientId) {
+    final orders = _store.orders.where((o) => o.patientId == patientId).toList();
+    orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return orders;
   }
 
   /// GET /api/patient/sample/:barcode

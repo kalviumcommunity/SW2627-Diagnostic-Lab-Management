@@ -5,6 +5,7 @@ import '../../../data/repositories/order_repository.dart';
 import '../../../data/repositories/sample_repository.dart';
 import '../../../data/services/central_data_store.dart';
 import '../../../domain/enums/sample_status.dart';
+import '../../../config/app_mode.dart';
 import '../models/phlebotomist_collection_request.dart';
 
 /// Phlebotomist Backend API Service (Collection, Vial Barcoding & Cold-Chain Intake)
@@ -25,13 +26,33 @@ class PhlebotomistService {
         _sampleRepository = sampleRepository ?? SampleRepository(),
         _firestore = firestore;
 
+  /// Synchronous retrieval for instant zero-latency UI re-render
+  List<OrderModel> getAssignedPickupsSync(String phlebotomistId) {
+    return _store.orders.where((o) =>
+        o.assignedPhlebotomistId == phlebotomistId ||
+        o.assignedPhlebotomistId == 'PH-PRAVEEN' ||
+        o.assignedPhlebotomistId == null ||
+        o.assignedPhlebotomistId!.isEmpty ||
+        isDemoMode).toList();
+  }
+
+  /// Synchronous retrieval of collected samples for instant zero-latency UI re-render
+  List<SampleModel> getCollectedSamplesSync(String phlebotomistId) {
+    return _store.samples.where((s) =>
+        s.currentCustodianId == phlebotomistId ||
+        s.assignedPhlebotomistId == phlebotomistId ||
+        s.events.any((e) => e.actorId == phlebotomistId)).toList();
+  }
+
   /// Returns all doorstep pickup orders assigned to the phlebotomist.
   Future<List<OrderModel>> getAssignedPickups(String phlebotomistId) async {
     await Future.delayed(const Duration(milliseconds: 150));
     final matching = _store.orders.where((o) =>
         o.assignedPhlebotomistId == phlebotomistId ||
+        o.assignedPhlebotomistId == 'PH-PRAVEEN' ||
         o.assignedPhlebotomistId == null ||
-        o.assignedPhlebotomistId!.isEmpty).toList();
+        o.assignedPhlebotomistId!.isEmpty ||
+        isDemoMode).toList();
 
     if (matching.isNotEmpty) return matching;
 

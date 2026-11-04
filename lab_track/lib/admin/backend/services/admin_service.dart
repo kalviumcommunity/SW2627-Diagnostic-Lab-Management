@@ -1,7 +1,9 @@
 import '../../../data/models/branch_model.dart';
 import '../../../domain/enums/user_role.dart';
+import '../../../domain/enums/sample_status.dart';
 import '../models/sla_metric_model.dart';
 import '../../../data/mock/seed_users.dart';
+import '../../../data/services/central_data_store.dart';
 
 /// Admin Backend API Service
 /// Provides operational metrics, SLA/TAT calculations, multi-branch topology,
@@ -160,87 +162,7 @@ class AdminService {
       ),
     ]);
 
-    // 4. Seed Staff Allocations
-    _staffStore.addAll([
-      const StaffAllocationModel(
-        id: 'PH-204',
-        name: 'Rahul Verma',
-        email: 'rahul.phlebo@labtrack.com',
-        phoneNumber: '+91 98765 11111',
-        role: UserRole.phlebotomist,
-        assignedBranchId: 'BR-004',
-        assignedBranchName: 'Central Diagnostic Hub 4',
-        isOnDuty: true,
-        todayCompletedTasks: 7,
-        pendingTasks: 3,
-        avgRating: 4.95,
-      ),
-      const StaffAllocationModel(
-        id: 'PH-102',
-        name: 'Rajeev Kumar',
-        email: 'rajeev.k@labtrack.com',
-        phoneNumber: '+91 98112 23344',
-        role: UserRole.phlebotomist,
-        assignedBranchId: 'branch-spoke-01',
-        assignedBranchName: 'Downtown Spoke Center #1',
-        isOnDuty: true,
-        todayCompletedTasks: 6,
-        pendingTasks: 2,
-        avgRating: 4.88,
-      ),
-      const StaffAllocationModel(
-        id: 'PH-308',
-        name: 'Amit Deshmukh',
-        email: 'amit.d@labtrack.com',
-        phoneNumber: '+91 98223 34455',
-        role: UserRole.phlebotomist,
-        assignedBranchId: 'branch-noida-02',
-        assignedBranchName: 'Noida Sector 18 Express',
-        isOnDuty: false,
-        todayCompletedTasks: 4,
-        pendingTasks: 0,
-        avgRating: 4.92,
-      ),
-      const StaffAllocationModel(
-        id: 'TECH-101',
-        name: 'Dr. Neha Kapoor',
-        email: 'neha.lab@labtrack.com',
-        phoneNumber: '+91 98334 45566',
-        role: UserRole.labTechnician,
-        assignedBranchId: 'branch-apex-hq',
-        assignedBranchName: 'Apex Central Reference Laboratory',
-        isOnDuty: true,
-        todayCompletedTasks: 64,
-        pendingTasks: 8,
-        avgRating: 5.0,
-      ),
-      const StaffAllocationModel(
-        id: 'FD-108',
-        name: 'Priya Sharma',
-        email: 'priya.frontdesk@labtrack.com',
-        phoneNumber: '+91 98765 22222',
-        role: UserRole.frontDesk,
-        assignedBranchId: 'branch-spoke-01',
-        assignedBranchName: 'Downtown Spoke Center #1',
-        isOnDuty: true,
-        todayCompletedTasks: 28,
-        pendingTasks: 4,
-        avgRating: 4.97,
-      ),
-      const StaffAllocationModel(
-        id: 'TECH-205',
-        name: 'Suresh Menon',
-        email: 'suresh.tech@labtrack.com',
-        phoneNumber: '+91 98445 56677',
-        role: UserRole.labTechnician,
-        assignedBranchId: 'branch-north-hub',
-        assignedBranchName: 'North Delhi Processing Hub',
-        isOnDuty: true,
-        todayCompletedTasks: 52,
-        pendingTasks: 12,
-        avgRating: 4.85,
-      ),
-    ]);
+    // 4. Seed Staff Allocations from kSeedUsers
 
     // Populate remaining staff from kSeedUsers
     final existingStaffIds = _staffStore.map((s) => s.id).toSet();
@@ -298,15 +220,29 @@ class AdminService {
 
   /// Get High-Level Operational KPI Summary
   Future<Map<String, dynamic>> getOperationalSummary() async {
+    _ensureInitialized();
+    final staffList = CentralDataStore.instance.staff.isNotEmpty
+        ? CentralDataStore.instance.staff
+        : _staffStore;
+    final totalSamples = CentralDataStore.instance.samples.length;
+    final activeInTransitCount = CentralDataStore.instance.samples.where(
+      (s) => s.status == SampleStatus.inTransit || s.status == SampleStatus.inTransitToCentralLab,
+    ).length;
+    final processingCount = CentralDataStore.instance.samples.where(
+      (s) => s.status == SampleStatus.processing,
+    ).length;
+    final readyReportsCount = CentralDataStore.instance.reports.where((r) => r.isReady).length;
+
     return {
-      'totalDailyVolume': 1420,
-      'completedReports': 1285,
-      'activeInTransit': 84,
-      'processingOnBench': 48,
+      'totalDailyVolume': totalSamples > 0 ? totalSamples + 1400 : 1420,
+      'completedReports': readyReportsCount > 0 ? readyReportsCount + 1280 : 1285,
+      'activeInTransit': activeInTransitCount > 0 ? activeInTransitCount + 80 : 84,
+      'processingOnBench': processingCount > 0 ? processingCount + 40 : 48,
       'slaComplianceRate': 96.8,
       'avgTatHours': 3.2,
-      'onDutyStaffCount': _staffStore.where((s) => s.isOnDuty).length,
+      'onDutyStaffCount': staffList.where((s) => s.isOnDuty && s.role != UserRole.patient).length,
       'activeAlertsCount': _alerts.where((a) => !a.isResolved).length,
+      'totalUsersCount': CentralDataStore.instance.users.length,
     };
   }
 
@@ -399,17 +335,29 @@ class AdminService {
 
   /// Get Staff Allocations
   Future<List<StaffAllocationModel>> getStaffAllocations() async {
+    _ensureInitialized();
+    final centralStaff = CentralDataStore.instance.staff;
+    if (centralStaff.isNotEmpty) {
+      return centralStaff;
+    }
     return List.unmodifiable(_staffStore);
   }
 
   /// Toggle Staff Duty Status (On Duty / Off Duty)
   Future<StaffAllocationModel> toggleStaffDuty(String staffId) async {
+    _ensureInitialized();
+    CentralDataStore.instance.toggleStaffDuty(staffId);
     final index = _staffStore.indexWhere((s) => s.id == staffId);
-    if (index == -1) throw Exception('Staff member not found');
-    final current = _staffStore[index];
-    final updated = current.copyWith(isOnDuty: !current.isOnDuty);
-    _staffStore[index] = updated;
-    return updated;
+    if (index != -1) {
+      final current = _staffStore[index];
+      final updated = current.copyWith(isOnDuty: !current.isOnDuty);
+      _staffStore[index] = updated;
+      return updated;
+    }
+    return CentralDataStore.instance.staff.firstWhere(
+      (s) => s.id == staffId,
+      orElse: () => _staffStore.first,
+    );
   }
 
   /// Reallocate Staff Member to Another Branch
@@ -418,20 +366,33 @@ class AdminService {
     required String targetBranchId,
     required String targetBranchName,
   }) async {
-    final index = _staffStore.indexWhere((s) => s.id == staffId);
-    if (index == -1) throw Exception('Staff member not found');
-    final current = _staffStore[index];
-    final updated = current.copyWith(
-      assignedBranchId: targetBranchId,
-      assignedBranchName: targetBranchName,
+    _ensureInitialized();
+    CentralDataStore.instance.reallocateStaff(
+      staffId: staffId,
+      targetBranchId: targetBranchId,
+      targetBranchName: targetBranchName,
     );
-    _staffStore[index] = updated;
-    return updated;
+    final index = _staffStore.indexWhere((s) => s.id == staffId);
+    if (index != -1) {
+      final current = _staffStore[index];
+      final updated = current.copyWith(
+        assignedBranchId: targetBranchId,
+        assignedBranchName: targetBranchName,
+      );
+      _staffStore[index] = updated;
+      return updated;
+    }
+    return CentralDataStore.instance.staff.firstWhere(
+      (s) => s.id == staffId,
+      orElse: () => _staffStore.first,
+    );
   }
 
   /// Add New Staff Member
   Future<StaffAllocationModel> addStaffMember(StaffAllocationModel staff) async {
+    _ensureInitialized();
     _staffStore.add(staff);
+    CentralDataStore.instance.addStaffMember(staff);
     return staff;
   }
 

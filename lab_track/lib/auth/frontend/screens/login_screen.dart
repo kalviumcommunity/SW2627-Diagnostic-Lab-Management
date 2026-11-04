@@ -77,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Logged in successfully as John Doe (Demo Patient)'),
+          content: Text('Logged in successfully as Virender (Demo Patient)'),
           backgroundColor: AppColors.success,
         ),
       );
@@ -523,7 +523,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: OutlinedButton.icon(
                 onPressed: authProvider.isLoading ? null : _handleDemoLogin,
                 icon: const Icon(Icons.flash_on_rounded, color: AppColors.accent, size: 18),
-                label: const Text('1-Click Demo Login as John Doe', style: TextStyle(fontSize: 13)),
+                label: const Text('1-Click Demo Login as Virender', style: TextStyle(fontSize: 13)),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   side: const BorderSide(color: AppColors.accent, width: 1.5),

@@ -91,7 +91,7 @@ class CollectConfirmScreen extends StatelessWidget {
                   _buildDetailRow('Vial Type', sample.vialType),
                   _buildDetailRow('Status', sample.status.displayName, highlight: true),
                   _buildDetailRow('Temperature', sample.temperatureStatus ?? '4.0°C (Normal)'),
-                  _buildDetailRow('Custody Holder', sample.assignedPhlebotomistName ?? 'Rahul Verma'),
+                  _buildDetailRow('Custody Holder', sample.assignedPhlebotomistName ?? 'Praveen'),
                 ],
               ),
             ),

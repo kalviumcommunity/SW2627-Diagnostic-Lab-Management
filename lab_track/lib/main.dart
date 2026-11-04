@@ -10,18 +10,18 @@ import 'auth/frontend/screens/role_selection_screen.dart';
 import 'patient/frontend/providers/patient_provider.dart';
 import 'phlebotomist/frontend/providers/phlebotomist_provider.dart';
 import 'frontdesk/frontend/providers/frontdesk_provider.dart';
+import 'lab/frontend/providers/lab_provider.dart';
+import 'admin/frontend/providers/admin_provider.dart';
 import 'data/services/central_data_store.dart';
 import 'routing/role_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    if (!isDemoMode) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
     CentralDataStore.instance.connectToFirestore();
-    }
   } catch (e) {
     debugPrint('Firebase initialization notice: $e');
   }
@@ -39,6 +39,8 @@ void main() async {
           update: (_, auth, collector) => collector!..setPhlebotomist(auth.currentUser?.id),
         ),
         ChangeNotifierProvider(create: (_) => FrontDeskProvider()),
+        ChangeNotifierProvider(create: (_) => LabProvider()),
+        ChangeNotifierProvider(create: (_) => AdminProvider()),
       ],
       child: const LabTrackApp(),
     ),

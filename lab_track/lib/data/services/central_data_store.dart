@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
@@ -16,6 +17,8 @@ import '../../lab/backend/models/lab_rack_model.dart';
 import '../../lab/backend/models/qc_inspection_model.dart';
 import '../../data/models/user_model.dart';
 import '../../data/mock/seed_users.dart';
+import 'cross_tab_sync.dart';
+import 'scanner_service.dart';
 
 /// Central Unified Diagnostic Lab Data Store
 /// Serves as the single source of truth across all 5 user roles:
@@ -38,6 +41,7 @@ class CentralDataStore extends ChangeNotifier {
   FirebaseFirestore? _firestore;
   bool _firestoreSyncStarted = false;
   bool _isFirestoreConnected = false;
+  final List<StreamSubscription> _firestoreSubscriptions = [];
 
   CentralDataStore._internal() {
     _ensureInitialized();
@@ -62,6 +66,10 @@ class CentralDataStore extends ChangeNotifier {
   void _ensureInitialized() {
     if (_initialized) return;
     _initialized = true;
+
+    _initFirestoreSync();
+    _initCrossTabSync();
+
     // Synthetic fixtures must never be mixed with a live data source.
     if (!isDemoMode) return;
 
@@ -69,7 +77,7 @@ class CentralDataStore extends ChangeNotifier {
 
     // 1. Seed Network Branches
     _branches.addAll([
-      const BranchModel(
+const BranchModel(
         id: 'branch-apex-hq',
         name: 'Apex Central Reference Laboratory',
         address: 'Plot 42, Institutional Area, Sector 32, Gurugram',
@@ -111,386 +119,24 @@ class CentralDataStore extends ChangeNotifier {
       ),
     ]);
 
-    // 2. Seed Staff Allocations
-    _staff.addAll([
-      const StaffAllocationModel(
-        id: 'PH-204',
-        name: 'Rahul Verma',
-        email: 'rahul.phlebo@labtrack.com',
-        phoneNumber: '+91 98765 11111',
-        role: UserRole.phlebotomist,
-        assignedBranchId: 'branch-spoke-01',
-        assignedBranchName: 'Downtown Spoke Center #1',
-        isOnDuty: true,
-        todayCompletedTasks: 7,
-        pendingTasks: 3,
-        avgRating: 4.9,
-      ),
-      const StaffAllocationModel(
-        id: 'FD-108',
-        name: 'Priya Sharma',
-        email: 'priya.frontdesk@labtrack.com',
-        phoneNumber: '+91 98765 22222',
-        role: UserRole.frontDesk,
-        assignedBranchId: 'branch-spoke-01',
-        assignedBranchName: 'Downtown Spoke Center #1',
-        isOnDuty: true,
-        todayCompletedTasks: 15,
-        pendingTasks: 12,
-        avgRating: 4.8,
-      ),
-      const StaffAllocationModel(
-        id: 'LAB-501',
-        name: 'Dr. Sarah Chen',
-        email: 'sarah.lab@labtrack.com',
-        phoneNumber: '+91 98765 55555',
-        role: UserRole.labTechnician,
-        assignedBranchId: 'branch-apex-hq',
-        assignedBranchName: 'Apex Central Reference Laboratory',
-        isOnDuty: true,
-        todayCompletedTasks: 34,
-        pendingTasks: 28,
-        avgRating: 4.95,
-      ),
-      const StaffAllocationModel(
-        id: 'PATH-01',
-        name: 'Dr. Arvind Mehta (MD Path)',
-        email: 'arvind.path@labtrack.com',
-        phoneNumber: '+91 98765 44444',
-        role: UserRole.labTechnician,
-        assignedBranchId: 'branch-apex-hq',
-        assignedBranchName: 'Apex Central Reference Laboratory',
-        isOnDuty: true,
-        todayCompletedTasks: 12,
-        pendingTasks: 5,
-        avgRating: 4.98,
-      ),
-    ]);
-
-    // Seed 100 diagnostic users dataset
+    // 2. Seed Presentation Users & Staff (Virender, Praveen, Aryan, Ritu mam)
     _users.addAll(kSeedUsers);
 
-    // Seed remaining staff fleet from kSeedUsers
-    final existingStaffIds = _staff.map((s) => s.id).toSet();
-    const branchNameMap = {
-      'branch-apex-hq': 'Apex Central Reference Laboratory',
-      'branch-spoke-01': 'Downtown Spoke Center #1',
-      'BR-004': 'Central Diagnostic Hub 4',
-      'branch-noida-02': 'Noida Sector 18 Express Collection Center',
-      'branch-southdelhi-03': 'South Extension Specialized Pathology',
-      'branch-north-hub': 'North Delhi Processing Hub',
-    };
     for (final u in kSeedUsers) {
-      if (!u.isPatient && !existingStaffIds.contains(u.id)) {
+      if (!u.isPatient) {
         _staff.add(
           userToStaffAllocation(
             u,
-            assignedBranchName: branchNameMap[u.assignedBranchId] ?? 'Central Lab Hub',
-            isOnDuty: true,
-            todayCompletedTasks: 4 + (u.id.hashCode.abs() % 15),
-            pendingTasks: 1 + (u.id.hashCode.abs() % 5),
-            avgRating: 4.8 + ((u.id.hashCode.abs() % 20) / 100.0),
+            assignedBranchName: u.assignedBranchId == 'branch-spoke-01'
+                ? 'Downtown Spoke Center #1'
+                : 'Apex Central Reference Laboratory',
           ),
         );
       }
     }
 
-    // 3. Seed Diagnostic Orders
-    final order1 = OrderModel(
-      id: 'ORD-84210',
-      patientId: 'PT-84210',
-      patientName: 'John Doe',
-      patientPhone: '+91 98765 43210',
-      collectionAddress: 'Apartment 4B, Sunrise Residency, Sector 14, Gurugram',
-      testNames: const ['Thyroid Panel (T3, T4, TSH)', 'HbA1c Glycated Hemoglobin', 'Complete Blood Count (CBC)'],
-      totalAmount: 1450.0,
-      scheduledDate: now.subtract(const Duration(hours: 4)),
-      timeSlot: '07:30 AM - 08:30 AM',
-      branchId: 'branch-spoke-01',
-      branchName: 'Downtown Spoke Center #1',
-      status: OrderStatus.inProgress,
-      sampleBarcodes: const ['SMP-88390', 'SMP-77219'],
-      assignedPhlebotomistId: 'PH-204',
-      assignedPhlebotomistName: 'Rahul Verma',
-      createdAt: now.subtract(const Duration(hours: 6)),
-    );
-
-    final order2 = OrderModel(
-      id: 'ORD-90214',
-      patientId: 'PT-90214',
-      patientName: 'Meena Gupta',
-      patientPhone: '+91 98765 77777',
-      collectionAddress: 'Villa 12, Palm Meadows, DLF Phase 2, Gurugram',
-      testNames: const ['Lipid Profile', 'HbA1c Glycated Hemoglobin'],
-      totalAmount: 980.0,
-      scheduledDate: now.subtract(const Duration(hours: 2)),
-      timeSlot: '08:30 AM - 09:30 AM',
-      branchId: 'branch-apex-hq',
-      branchName: 'Apex Central Reference Laboratory',
-      status: OrderStatus.inProgress,
-      sampleBarcodes: const ['SMP-90214'],
-      assignedPhlebotomistId: 'PH-204',
-      assignedPhlebotomistName: 'Rahul Verma',
-      createdAt: now.subtract(const Duration(hours: 4)),
-    );
-
-    final order3 = OrderModel(
-      id: 'ORD-77401',
-      patientId: 'PT-33109',
-      patientName: 'Arjun Kapoor',
-      patientPhone: '+91 98765 88990',
-      collectionAddress: 'B-404, Pinnacle Tower, Golf Course Road, Gurugram',
-      testNames: const ['Complete Blood Count (CBC) with Differential'],
-      totalAmount: 450.0,
-      scheduledDate: now.subtract(const Duration(hours: 1)),
-      timeSlot: '09:30 AM - 10:30 AM',
-      branchId: 'branch-apex-hq',
-      branchName: 'Apex Central Reference Laboratory',
-      status: OrderStatus.inProgress,
-      sampleBarcodes: const ['SMP-77401'],
-      assignedPhlebotomistId: 'PH-204',
-      assignedPhlebotomistName: 'Rahul Verma',
-      createdAt: now.subtract(const Duration(hours: 3)),
-    );
-
-    final order4 = OrderModel(
-      id: 'ORD-84215',
-      patientId: 'PT-84215',
-      patientName: 'Rajesh Sharma',
-      patientPhone: '+91 98765 33344',
-      collectionAddress: 'Shop 12, Main Market, Connaught Place, New Delhi',
-      testNames: const ['Lipid Profile', 'Liver Function Test (LFT)'],
-      totalAmount: 1850.0,
-      scheduledDate: now.subtract(const Duration(hours: 3)),
-      timeSlot: '08:00 AM - 09:00 AM',
-      branchId: 'branch-spoke-01',
-      branchName: 'Downtown Spoke Center #1',
-      status: OrderStatus.inProgress,
-      sampleBarcodes: const ['SMP-94001'],
-      assignedPhlebotomistId: 'PH-204',
-      assignedPhlebotomistName: 'Rahul Verma',
-      createdAt: now.subtract(const Duration(hours: 3)),
-    );
-
-    _orders.addAll([order1, order2, order3, order4]);
-
-    // 4. Seed Physical Diagnostic Samples
-    _samples.addAll([
-      // Sample 1: John Doe - Collected by Rahul, in transit to lab
-      SampleModel(
-        barcode: 'SMP-88390',
-        orderId: 'ORD-84210',
-        patientId: 'PT-84210',
-        patientName: 'John Doe',
-        patientPhone: '+91 98765 43210',
-        tubeType: 'Purple Top (K2 EDTA) + Gold Top (SST)',
-        status: SampleStatus.inTransit,
-        currentCustodianId: 'PH-204',
-        currentCustodianRole: 'Phlebotomist',
-        currentBranchId: 'branch-spoke-01',
-        currentBranchName: 'Transit to Central Lab',
-        assignedPhlebotomistId: 'PH-204',
-        assignedPhlebotomistName: 'Rahul Verma',
-        temperatureC: 4.2,
-        testNames: const ['Thyroid Panel (T3, T4, TSH)', 'HbA1c', 'Complete Blood Count (CBC)'],
-        notes: 'Cold chain verified. Home draw completed successfully.',
-        events: [
-          SampleEventModel(
-            id: 'EV-88390-1',
-            sampleBarcode: 'SMP-88390',
-            toStatus: SampleStatus.collected,
-            actorId: 'PH-204',
-            actorName: 'Rahul Verma',
-            actorRole: UserRole.phlebotomist,
-            timestamp: now.subtract(const Duration(hours: 3)),
-            branchId: 'Patient Home (Sector 14)',
-            temperatureC: 4.0,
-            note: 'Blood drawn sterile. Barcodes affixed.',
-          ),
-          SampleEventModel(
-            id: 'EV-88390-2',
-            sampleBarcode: 'SMP-88390',
-            toStatus: SampleStatus.inTransit,
-            actorId: 'PH-204',
-            actorName: 'Rahul Verma',
-            actorRole: UserRole.phlebotomist,
-            timestamp: now.subtract(const Duration(hours: 1)),
-            branchId: 'In Transit to Central Reference Lab',
-            temperatureC: 4.2,
-            note: 'Cold gel box temperature monitored.',
-          ),
-        ],
-        createdAt: now.subtract(const Duration(hours: 4)),
-      ),
-
-      // Sample 2: Meena Gupta - Arrived at Central Lab courier receiving
-      SampleModel(
-        barcode: 'SMP-90214',
-        orderId: 'ORD-90214',
-        patientId: 'PT-90214',
-        patientName: 'Meena Gupta',
-        patientPhone: '+91 98765 77777',
-        tubeType: 'Gold Top (SST Serum Gel)',
-        status: SampleStatus.inTransitToCentralLab,
-        currentCustodianId: 'COURIER-09',
-        currentCustodianRole: 'Logistics Courier',
-        currentBranchId: 'branch-apex-hq',
-        currentBranchName: 'Apex Central Reference Lab Receiving Bay',
-        temperatureC: 4.2,
-        testNames: const ['Lipid Profile', 'HbA1c Glycated Hemoglobin'],
-        notes: 'Arrived at Central Lab receiving desk.',
-        events: [
-          SampleEventModel(
-            id: 'EV-90214-1',
-            sampleBarcode: 'SMP-90214',
-            toStatus: SampleStatus.collected,
-            actorId: 'PH-204',
-            actorName: 'Rahul Verma',
-            actorRole: UserRole.phlebotomist,
-            timestamp: now.subtract(const Duration(hours: 3)),
-            branchId: 'Downtown Spoke Center #1',
-            temperatureC: 4.0,
-          ),
-        ],
-        createdAt: now.subtract(const Duration(hours: 3)),
-      ),
-
-      // Sample 3: Arjun Kapoor - In Central Lab Accessioning
-      SampleModel(
-        barcode: 'SMP-77401',
-        orderId: 'ORD-77401',
-        patientId: 'PT-33109',
-        patientName: 'Arjun Kapoor',
-        patientPhone: '+91 98765 88990',
-        tubeType: 'Purple Top (K2 EDTA)',
-        status: SampleStatus.receivedAtLab,
-        currentCustodianId: 'LAB-501',
-        currentCustodianRole: 'Lab Technician',
-        currentBranchId: 'branch-apex-hq',
-        currentBranchName: 'Apex Central Reference Lab - Specimen Intake',
-        temperatureC: 4.0,
-        testNames: const ['Complete Blood Count (CBC) with Differential'],
-        notes: 'Specimen checked in. Tube integrity verified.',
-        events: [
-          SampleEventModel(
-            id: 'EV-77401-1',
-            sampleBarcode: 'SMP-77401',
-            toStatus: SampleStatus.receivedAtLab,
-            actorId: 'LAB-501',
-            actorName: 'Dr. Sarah Chen',
-            actorRole: UserRole.labTechnician,
-            timestamp: now.subtract(const Duration(minutes: 50)),
-            branchId: 'Central Reference Lab - Bench A1',
-            temperatureC: 4.0,
-          ),
-        ],
-        createdAt: now.subtract(const Duration(hours: 2)),
-      ),
-
-      // Sample 4: Completed Sample for John Doe (CBC already verified)
-      SampleModel(
-        barcode: 'SMP-77219',
-        orderId: 'ORD-84210',
-        patientId: 'PT-84210',
-        patientName: 'John Doe',
-        patientPhone: '+91 98765 43210',
-        tubeType: 'Purple Top (K2 EDTA)',
-        status: SampleStatus.reportReady,
-        currentCustodianId: 'PATH-01',
-        currentCustodianRole: 'Pathologist',
-        currentBranchId: 'branch-apex-hq',
-        currentBranchName: 'Apex Central Reference Laboratory',
-        temperatureC: 4.0,
-        testNames: const ['Complete Blood Count (CBC)'],
-        notes: 'Testing complete. Electronically signed by Dr. Arvind Mehta.',
-        createdAt: now.subtract(const Duration(days: 1)),
-      ),
-
-      // Sample 5: Rajesh Sharma - Collected & In Transit
-      SampleModel(
-        barcode: 'SMP-94001',
-        orderId: 'ORD-84215',
-        patientId: 'PT-84215',
-        patientName: 'Rajesh Sharma',
-        patientPhone: '+91 98765 33344',
-        tubeType: 'Gold Top (SST Serum Gel)',
-        status: SampleStatus.inTransit,
-        currentCustodianId: 'PH-204',
-        currentCustodianRole: 'Phlebotomist',
-        currentBranchId: 'branch-spoke-01',
-        currentBranchName: 'Downtown Spoke Center #1',
-        temperatureC: 4.1,
-        testNames: const ['Lipid Profile', 'Liver Function Test (LFT)'],
-        notes: 'Cold chain verified. Home draw completed.',
-        createdAt: now.subtract(const Duration(hours: 3)),
-      ),
-    ]);
-
-    // 5. Seed Diagnostic Reports
-    _reports.addAll([
-      // Report 1: Ready for Pathologist Review
-      ReportModel(
-        id: 'REP-84210',
-        orderId: 'ORD-84210',
-        sampleBarcode: 'SMP-88390',
-        patientId: 'PT-84210',
-        patientName: 'John Doe',
-        testName: 'Complete Blood Count (CBC) with Differential',
-        branchName: 'Apex Central Reference Laboratory',
-        pathologistName: null,
-        uploadedById: 'LAB-501',
-        status: 'Pending Authorization',
-        isReady: false,
-        testResults: const [
-          ReportParameter(name: 'Hemoglobin', value: '14.8', unit: 'g/dL', range: '13.0 - 17.0', flag: 'Normal'),
-          ReportParameter(name: 'Total Leukocyte Count (WBC)', value: '11,800', unit: '/uL', range: '4,000 - 11,000', flag: 'High'),
-          ReportParameter(name: 'Platelet Count', value: '265,000', unit: '/uL', range: '150,000 - 450,000', flag: 'Normal'),
-          ReportParameter(name: 'Packed Cell Volume (PCV)', value: '44.2', unit: '%', range: '40.0 - 50.0', flag: 'Normal'),
-          ReportParameter(name: 'Neutrophils', value: '74', unit: '%', range: '40 - 70', flag: 'High'),
-          ReportParameter(name: 'Lymphocytes', value: '20', unit: '%', range: '20 - 40', flag: 'Normal'),
-        ],
-        createdAt: now.subtract(const Duration(minutes: 35)),
-      ),
-
-      // Report 2: Fully Verified and Signed
-      ReportModel(
-        id: 'REP-91204',
-        orderId: 'ORD-81002',
-        sampleBarcode: 'SMP-77219',
-        patientId: 'PT-84210',
-        patientName: 'John Doe',
-        testName: 'Liver Function Panel (LFT)',
-        branchName: 'Apex Central Reference Laboratory',
-        pathologistName: 'Dr. Arvind Mehta (MD Path, Reg: MCI-4421)',
-        uploadedById: 'LAB-501',
-        status: 'Verified & Ready',
-        isReady: true,
-        verificationDate: now.subtract(const Duration(days: 1)),
-        testResults: const [
-          ReportParameter(name: 'Serum Bilirubin (Total)', value: '0.9', unit: 'mg/dL', range: '0.2 - 1.2', flag: 'Normal'),
-          ReportParameter(name: 'SGOT (AST)', value: '28', unit: 'U/L', range: '10 - 40', flag: 'Normal'),
-          ReportParameter(name: 'SGPT (ALT)', value: '32', unit: 'U/L', range: '7 - 56', flag: 'Normal'),
-          ReportParameter(name: 'Alkaline Phosphatase (ALP)', value: '88', unit: 'U/L', range: '44 - 147', flag: 'Normal'),
-          ReportParameter(name: 'Serum Albumin', value: '4.4', unit: 'g/dL', range: '3.5 - 5.5', flag: 'Normal'),
-        ],
-        createdAt: now.subtract(const Duration(days: 1)),
-      ),
-    ]);
-
-    // 6. Seed Quality Control Rejection Log
-    _qcRejections.add(
-      QcInspectionModel(
-        id: 'QC-88390',
-        sampleBarcode: 'SMP-88390',
-        patientName: 'John Doe',
-        testName: 'Complete Blood Count (CBC) with Differential',
-        rejectionReason: 'Hemolyzed Specimen (Free Hb > 500mg/dL)',
-        technicianId: 'LAB-501',
-        technicianName: 'Dr. Sarah Chen (#LAB-501)',
-        rejectedAt: now.subtract(const Duration(hours: 1)),
-        clinicalNotes: 'Specimen rejected during pre-analytical inspection.',
-      ),
-    );
+    // 3. ZERO PREVIOUS ORDERS / SAMPLES / REPORTS (Clean Slate for Live Demonstration)
+    // Orders, Samples, and Reports are populated dynamically in real-time when Virender books a test!
 
     // 7. Seed Analyzer Racks
     _racks.addAll([
@@ -564,7 +210,23 @@ class CentralDataStore extends ChangeNotifier {
       ),
     ]);
 
-    _initFirestoreSync();
+  }
+
+  /// Cancels all active Cloud Firestore listeners and resets sync state
+  void cancelFirestoreSubscriptions() {
+    for (final s in _firestoreSubscriptions) {
+      s.cancel();
+    }
+    _firestoreSubscriptions.clear();
+    _firestoreSyncStarted = false;
+    _isFirestoreConnected = false;
+  }
+
+  void clearAllDataForTesting() {
+    _orders.clear();
+    _samples.clear();
+    _reports.clear();
+    notifyListeners();
   }
 
   /// Explicitly triggers or verifies Cloud Firestore connection
@@ -573,7 +235,6 @@ class CentralDataStore extends ChangeNotifier {
   }
 
   FirebaseFirestore? _getOrInitFirestore() {
-    if (isDemoMode) return null;
     if (_firestore != null) return _firestore;
     try {
       _firestore = FirebaseFirestore.instance;
@@ -588,7 +249,6 @@ class CentralDataStore extends ChangeNotifier {
   }
 
   void _initFirestoreSync() {
-    if (isDemoMode) return;
     try {
       _firestore = FirebaseFirestore.instance;
       if (!_firestoreSyncStarted) {
@@ -604,8 +264,13 @@ class CentralDataStore extends ChangeNotifier {
     final fs = _firestore;
     if (fs == null) return;
 
+    for (final s in _firestoreSubscriptions) {
+      s.cancel();
+    }
+    _firestoreSubscriptions.clear();
+
     // 1. Orders collection real-time listener
-    fs.collection('orders').snapshots().listen((snapshot) {
+    _firestoreSubscriptions.add(fs.collection('orders').snapshots().listen((snapshot) {
       for (final doc in snapshot.docs) {
         try {
           final order = OrderModel.fromMap(doc.data(), documentId: doc.id);
@@ -623,10 +288,10 @@ class CentralDataStore extends ChangeNotifier {
       notifyListeners();
     }, onError: (e) {
       debugPrint('CentralDataStore: Firestore orders listener notice: $e');
-    });
+    }));
 
     // 2. Samples collection real-time listener
-    fs.collection('samples').snapshots().listen((snapshot) {
+    _firestoreSubscriptions.add(fs.collection('samples').snapshots().listen((snapshot) {
       for (final doc in snapshot.docs) {
         try {
           final sample = SampleModel.fromMap(doc.data(), documentId: doc.id);
@@ -644,10 +309,10 @@ class CentralDataStore extends ChangeNotifier {
       notifyListeners();
     }, onError: (e) {
       debugPrint('CentralDataStore: Firestore samples listener notice: $e');
-    });
+    }));
 
     // 3. Reports collection real-time listener
-    fs.collection('reports').snapshots().listen((snapshot) {
+    _firestoreSubscriptions.add(fs.collection('reports').snapshots().listen((snapshot) {
       for (final doc in snapshot.docs) {
         try {
           final report = ReportModel.fromMap(doc.data(), documentId: doc.id);
@@ -665,7 +330,63 @@ class CentralDataStore extends ChangeNotifier {
       notifyListeners();
     }, onError: (e) {
       debugPrint('CentralDataStore: Firestore reports listener notice: $e');
-    });
+    }));
+
+    // 4. Users collection real-time listener (Patients & Staff)
+    _firestoreSubscriptions.add(fs.collection('users').snapshots().listen((snapshot) {
+      for (final doc in snapshot.docs) {
+        try {
+          final user = UserModel.fromMap(doc.data(), documentId: doc.id);
+          final idx = _users.indexWhere((u) => u.id == user.id || (user.email != null && user.email!.isNotEmpty && u.email == user.email));
+          if (idx != -1) {
+            _users[idx] = user;
+          } else {
+            _users.insert(0, user);
+          }
+
+          // Automatically sync staff roster so Admin updates in real-time
+          final sIdx = _staff.indexWhere((s) => s.id == user.id || (user.email != null && user.email!.isNotEmpty && s.email == user.email));
+          final staffMember = userToStaffAllocation(
+            user,
+            assignedBranchName: _branches.firstWhere(
+              (b) => b.id == user.assignedBranchId,
+              orElse: () => _branches.first,
+            ).name,
+          );
+          if (sIdx != -1) {
+            _staff[sIdx] = staffMember;
+          } else {
+            _staff.insert(0, staffMember);
+          }
+        } catch (e) {
+          debugPrint('CentralDataStore: Error parsing user ${doc.id}: $e');
+        }
+      }
+      _isFirestoreConnected = true;
+      notifyListeners();
+    }, onError: (e) {
+      debugPrint('CentralDataStore: Firestore users listener notice: $e');
+    }));
+
+    // 5. Branches collection real-time listener
+    _firestoreSubscriptions.add(fs.collection('branches').snapshots().listen((snapshot) {
+      for (final doc in snapshot.docs) {
+        try {
+          final branch = BranchModel.fromMap(doc.data(), documentId: doc.id);
+          final idx = _branches.indexWhere((b) => b.id == branch.id);
+          if (idx != -1) {
+            _branches[idx] = branch;
+          } else {
+            _branches.add(branch);
+          }
+        } catch (e) {
+          debugPrint('CentralDataStore: Error parsing branch ${doc.id}: $e');
+        }
+      }
+      notifyListeners();
+    }, onError: (e) {
+      debugPrint('CentralDataStore: Firestore branches listener notice: $e');
+    }));
   }
 
   void _syncOrderToFirestore(OrderModel order) {
@@ -711,6 +432,93 @@ class CentralDataStore extends ChangeNotifier {
   }
 
   // ==========================================================
+  // Real-Time Cross-Tab Synchronization (Web Multi-Tab Demo)
+  // ==========================================================
+
+  void _initCrossTabSync() {
+    try {
+      CrossTabSync.init((data) {
+        final type = data['type'] as String?;
+        final payload = data['payload'] as Map<String, dynamic>?;
+        if (payload == null) return;
+
+        if (type == 'sync_order') {
+          try {
+            final order = OrderModel.fromMap(payload, documentId: payload['id']?.toString());
+            final idx = _orders.indexWhere((o) => o.id == order.id);
+            if (idx != -1) {
+              _orders[idx] = order;
+            } else {
+              _orders.insert(0, order);
+            }
+            notifyListeners();
+          } catch (e) {
+            debugPrint('CentralDataStore cross-tab sync_order error: $e');
+          }
+        } else if (type == 'sync_sample') {
+          try {
+            final sample = SampleModel.fromMap(payload, documentId: payload['barcode']?.toString());
+            final idx = _samples.indexWhere((s) => s.barcode.toUpperCase() == sample.barcode.toUpperCase());
+            if (idx != -1) {
+              _samples[idx] = sample;
+            } else {
+              _samples.insert(0, sample);
+            }
+            notifyListeners();
+          } catch (e) {
+            debugPrint('CentralDataStore cross-tab sync_sample error: $e');
+          }
+        } else if (type == 'sync_report') {
+          try {
+            final report = ReportModel.fromMap(payload, documentId: payload['id']?.toString());
+            final idx = _reports.indexWhere((r) => r.id == report.id);
+            if (idx != -1) {
+              _reports[idx] = report;
+            } else {
+              _reports.insert(0, report);
+            }
+            notifyListeners();
+          } catch (e) {
+            debugPrint('CentralDataStore cross-tab sync_report error: $e');
+          }
+        }
+      });
+    } catch (e) {
+      debugPrint('CentralDataStore _initCrossTabSync error: $e');
+    }
+  }
+
+  dynamic _deepCleanForJson(dynamic value) {
+    if (value == null) return null;
+    if (value is num || value is bool || value is String) return value;
+    if (value is DateTime) return value.toIso8601String();
+    if (value is Timestamp) return value.toDate().toIso8601String();
+    if (value is List) return value.map(_deepCleanForJson).toList();
+    if (value is Map) {
+      return value.map((k, v) => MapEntry(k.toString(), _deepCleanForJson(v)));
+    }
+    return value.toString();
+  }
+
+  Map<String, dynamic> _orderToSyncJson(OrderModel order) {
+    final map = Map<String, dynamic>.from(_deepCleanForJson(order.toMap()) as Map);
+    map['id'] = order.id;
+    return map;
+  }
+
+  Map<String, dynamic> _sampleToSyncJson(SampleModel sample) {
+    final map = Map<String, dynamic>.from(_deepCleanForJson(sample.toMap()) as Map);
+    map['barcode'] = sample.barcode;
+    return map;
+  }
+
+  Map<String, dynamic> _reportToSyncJson(ReportModel report) {
+    final map = Map<String, dynamic>.from(_deepCleanForJson(report.toMap()) as Map);
+    map['id'] = report.id;
+    return map;
+  }
+
+  // ==========================================================
   // Cross-Role Mutation Methods (Auto-Synchronized across roles)
   // ==========================================================
 
@@ -718,9 +526,11 @@ class CentralDataStore extends ChangeNotifier {
   void createOrder(OrderModel order) {
     _orders.insert(0, order);
     _syncOrderToFirestore(order);
+    CrossTabSync.broadcast('sync_order', _orderToSyncJson(order));
 
     // If barcodes are specified or generate default sample
     for (final barcode in order.sampleBarcodes) {
+      if (_samples.any((s) => s.barcode.toUpperCase() == barcode.toUpperCase())) continue;
       final sample = SampleModel(
         barcode: barcode,
         orderId: order.id,
@@ -740,6 +550,67 @@ class CentralDataStore extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  /// 1.5 Phlebotomist verifies the patient's doorstep appointment pass
+  OrderModel? verifyPatientDoorstepPass({
+    required String orderId,
+    String phlebotomistId = 'PH-PRAVEEN',
+    String phlebotomistName = 'Praveen',
+  }) {
+    final now = DateTime.now();
+    String cleanOrderId = orderId.trim();
+    if (ScannerService.isAppointmentQr(cleanOrderId)) {
+      final parsed = ScannerService.parseAppointmentQr(cleanOrderId);
+      if (parsed != null && parsed.orderId.isNotEmpty) {
+        cleanOrderId = parsed.orderId;
+      }
+    } else {
+      final orderRegex = RegExp(r'\b(ORD-[A-Z0-9]+(?:-[A-Z0-9]+)*)\b', caseSensitive: false);
+      final match = orderRegex.firstMatch(cleanOrderId);
+      if (match != null) {
+        cleanOrderId = match.group(1)!.toUpperCase();
+      }
+    }
+
+    var oIdx = _orders.indexWhere((o) => o.id.toUpperCase() == cleanOrderId.toUpperCase());
+    if (oIdx == -1) {
+      final parsed = ScannerService.parseAppointmentQr(orderId);
+      if (parsed != null && parsed.patientId.isNotEmpty) {
+        oIdx = _orders.indexWhere((o) => o.patientId.toUpperCase() == parsed.patientId.toUpperCase());
+      }
+    }
+    if (oIdx == -1 && _orders.isNotEmpty) {
+      oIdx = _orders.indexWhere((o) => o.status != OrderStatus.completed);
+    }
+    if (oIdx == -1) {
+      return null;
+    }
+
+    final existing = _orders[oIdx];
+    final updated = existing.copyWith(
+      doorstepVerifiedAt: now,
+      status: OrderStatus.inProgress,
+      assignedPhlebotomistId: phlebotomistId,
+      assignedPhlebotomistName: phlebotomistName,
+      updatedAt: now,
+    );
+
+    _orders[oIdx] = updated;
+    _syncOrderToFirestore(updated);
+
+    CrossTabSync.broadcast('sync_order', _orderToSyncJson(updated));
+    CrossTabSync.broadcast('doorstep_verified', {
+      'orderId': updated.id,
+      'patientId': updated.patientId,
+      'patientName': updated.patientName,
+      'phlebotomistId': phlebotomistId,
+      'phlebotomistName': phlebotomistName,
+      'verifiedAt': now.toIso8601String(),
+    });
+
+    notifyListeners();
+    return updated;
   }
 
   /// 2. Phlebotomist confirms sample draw & binds barcode
@@ -834,6 +705,14 @@ class CentralDataStore extends ChangeNotifier {
       _syncSampleToFirestore(newSample);
     }
 
+    if (oIdx != -1) {
+      CrossTabSync.broadcast('sync_order', _orderToSyncJson(_orders[oIdx]));
+    }
+    final sUpdatedIdx = _samples.indexWhere((s) => s.barcode.toUpperCase() == sampleBarcode.toUpperCase());
+    if (sUpdatedIdx != -1) {
+      CrossTabSync.broadcast('sync_sample', _sampleToSyncJson(_samples[sUpdatedIdx]));
+    }
+
     notifyListeners();
   }
 
@@ -872,62 +751,107 @@ class CentralDataStore extends ChangeNotifier {
           lastEventAt: now,
         );
         _syncSampleToFirestore(_samples[sIdx]);
+        CrossTabSync.broadcast('sync_sample', _sampleToSyncJson(_samples[sIdx]));
       }
     }
     notifyListeners();
   }
 
   /// 4. Lab Tech accessions incoming specimen into Central Lab
-  void accessionSpecimen({
+  SampleModel? accessionSpecimen({
     required String barcode,
     String? rackId,
     String? notes,
-    String technicianName = 'Dr. Sarah Chen (#LAB-501)',
+    String technicianName = 'Aryan (#LAB-ARYAN)',
   }) {
     final now = DateTime.now();
-    final sIdx = _samples.indexWhere((s) => s.barcode.toUpperCase() == barcode.toUpperCase());
-    if (sIdx == -1) throw Exception('Sample not found.');
+
+    // Check if a batch handover QR code was scanned
+    if (ScannerService.isHandoverQr(barcode)) {
+      final handover = ScannerService.parseHandoverQr(barcode);
+      if (handover != null && handover.sampleBarcodes.isNotEmpty) {
+        SampleModel? lastAccessioned;
+        for (final b in handover.sampleBarcodes) {
+          try {
+            lastAccessioned = accessionSpecimen(
+              barcode: b,
+              rackId: rackId,
+              notes: notes ?? 'Handover from ' + handover.senderName + '. Temp: ' + (handover.temperatureC ?? 4.2).toString() + '°C',
+              technicianName: technicianName,
+            );
+          } catch (_) {}
+        }
+        return lastAccessioned;
+      }
+    }
+
+    String cleanBarcode = barcode.trim().toUpperCase();
+    final directMatch = RegExp(r'\b(SMP-[A-Z0-9]+(?:-[A-Z0-9]+)*)\b', caseSensitive: false).firstMatch(cleanBarcode);
+    if (directMatch != null) {
+      cleanBarcode = directMatch.group(1)!.toUpperCase();
+    }
+
+    var sIdx = _samples.indexWhere((s) => s.barcode.toUpperCase() == cleanBarcode);
+    if (sIdx == -1) {
+      sIdx = _samples.indexWhere((s) => s.orderId.toUpperCase() == cleanBarcode);
+    }
+    if (sIdx == -1) {
+      throw Exception('Sample "$barcode" not found in custody queue.');
+    }
     if (_samples[sIdx].status == SampleStatus.rejected ||
         _samples[sIdx].status == SampleStatus.reportReady ||
         _samples[sIdx].status == SampleStatus.delivered) {
       throw Exception('This sample cannot be accessioned.');
     }
 
+    final s = _samples[sIdx];
+    final actualBarcode = s.barcode;
+
     final milestone = SampleEventModel(
-      id: 'EV-ACC-$barcode-${now.millisecondsSinceEpoch}',
-      sampleBarcode: barcode,
+      id: 'EV-ACC-$actualBarcode-${now.millisecondsSinceEpoch}',
+      sampleBarcode: actualBarcode,
       toStatus: SampleStatus.receivedAtLab,
-      actorId: 'LAB-501',
+      actorId: 'LAB-ARYAN',
       actorName: technicianName,
       actorRole: UserRole.labTechnician,
       timestamp: now,
       branchId: 'Apex Central Reference Laboratory',
-      temperatureC: sIdx == -1 ? null : _samples[sIdx].temperatureC,
-      note: notes ?? 'Accessioned into Central Lab. Barcode verified.',
+      temperatureC: s.temperatureC ?? 4.2,
+      note: notes ?? 'Received from Phlebotomist Praveen. Cold chain verified intact.',
     );
 
-    if (sIdx != -1) {
-      final s = _samples[sIdx];
-      final events = List<SampleEventModel>.from(s.events)..add(milestone);
-      _samples[sIdx] = s.copyWith(
-        status: SampleStatus.receivedAtLab,
-        currentCustodianId: 'LAB-501',
-        currentCustodianRole: 'Lab Technician',
-        currentBranchId: 'branch-apex-hq',
-        currentBranchName: 'Apex Central Reference Laboratory',
-        temperatureC: s.temperatureC,
-        notes: notes ?? s.notes,
-        events: events,
-        lastEventAt: now,
-      );
-      _syncSampleToFirestore(_samples[sIdx]);
-    }
+    final events = List<SampleEventModel>.from(s.events)..add(milestone);
+    final updatedSample = s.copyWith(
+      status: SampleStatus.receivedAtLab,
+      currentCustodianId: 'LAB-ARYAN',
+      currentCustodianRole: 'Lab Technician',
+      currentBranchId: 'branch-apex-hq',
+      currentBranchName: 'Apex Central Reference Laboratory',
+      temperatureC: s.temperatureC ?? 4.2,
+      notes: notes ?? s.notes,
+      events: events,
+      lastEventAt: now,
+    );
+
+    _samples[sIdx] = updatedSample;
+    _syncSampleToFirestore(updatedSample);
+    CrossTabSync.broadcast('sync_sample', _sampleToSyncJson(updatedSample));
+    CrossTabSync.broadcast('sample_accessioned', {
+      'barcode': actualBarcode,
+      'orderId': updatedSample.orderId,
+      'patientName': updatedSample.patientName,
+      'technicianName': technicianName,
+      'temperatureC': updatedSample.temperatureC,
+      'accessionedAt': now.toIso8601String(),
+    });
 
     if (rackId != null && rackId.isNotEmpty) {
-      assignToRack(barcode: barcode, rackId: rackId);
+      assignToRack(barcode: actualBarcode, rackId: rackId);
     } else {
       notifyListeners();
     }
+
+    return updatedSample;
   }
 
   /// 5. Assign sample to automated analyzer rack (Status: Processing)
@@ -956,8 +880,8 @@ class CentralDataStore extends ChangeNotifier {
         id: 'EV-RACK-$barcode-${now.millisecondsSinceEpoch}',
         sampleBarcode: barcode,
         toStatus: SampleStatus.processing,
-        actorId: 'LAB-501',
-        actorName: 'Dr. Sarah Chen',
+        actorId: 'LAB-ARYAN',
+        actorName: 'Aryan',
         actorRole: UserRole.labTechnician,
         timestamp: now,
         branchId: 'Analyzer Rack: $rackId',
@@ -1008,6 +932,7 @@ class CentralDataStore extends ChangeNotifier {
     final orderId = sample.orderId;
 
     final rIdx = _reports.indexWhere((r) => r.sampleBarcode.toUpperCase() == sampleBarcode.toUpperCase() && r.testName == effectiveTestName);
+    ReportModel savedReport;
     if (rIdx != -1) {
       final existing = _reports[rIdx];
       final updated = ReportModel(
@@ -1018,7 +943,7 @@ class CentralDataStore extends ChangeNotifier {
         patientName: existing.patientName,
         testName: effectiveTestName,
         branchName: 'Apex Central Reference Laboratory',
-        uploadedById: 'Dr. Sarah Chen (#LAB-501)',
+        uploadedById: 'Aryan (#LAB-ARYAN)',
         pathologistName: existing.pathologistName,
         status: 'Pending Authorization',
         isReady: false,
@@ -1027,8 +952,8 @@ class CentralDataStore extends ChangeNotifier {
       );
       _reports[rIdx] = updated;
       _syncReportToFirestore(updated);
-      notifyListeners();
-      return updated;
+      CrossTabSync.broadcast('sync_report', _reportToSyncJson(updated));
+      savedReport = updated;
     } else {
       final newReport = ReportModel(
         id: 'REP-${now.millisecondsSinceEpoch}',
@@ -1038,7 +963,7 @@ class CentralDataStore extends ChangeNotifier {
         patientName: patientName,
         testName: effectiveTestName,
         branchName: 'Apex Central Reference Laboratory',
-        uploadedById: 'Dr. Sarah Chen (#LAB-501)',
+        uploadedById: 'Aryan (#LAB-ARYAN)',
         status: 'Pending Authorization',
         isReady: false,
         testResults: parameters,
@@ -1046,9 +971,33 @@ class CentralDataStore extends ChangeNotifier {
       );
       _reports.insert(0, newReport);
       _syncReportToFirestore(newReport);
-      notifyListeners();
-      return newReport;
+      CrossTabSync.broadcast('sync_report', _reportToSyncJson(newReport));
+      savedReport = newReport;
     }
+
+    final s = _samples[sIdx];
+    final milestone = SampleEventModel(
+      id: 'EV-RES-$sampleBarcode-${now.millisecondsSinceEpoch}',
+      sampleBarcode: sampleBarcode,
+      toStatus: SampleStatus.processing,
+      actorId: 'LAB-ARYAN',
+      actorName: 'Aryan (#LAB-ARYAN)',
+      actorRole: UserRole.labTechnician,
+      timestamp: now,
+      branchId: 'Apex Central Reference Laboratory',
+      note: 'Analytical findings recorded for $effectiveTestName (${parameters.length} parameters). Forwarded for Pathologist review.',
+    );
+    final events = List<SampleEventModel>.from(s.events)..add(milestone);
+    _samples[sIdx] = s.copyWith(
+      status: SampleStatus.processing,
+      events: events,
+      lastEventAt: now,
+    );
+    _syncSampleToFirestore(_samples[sIdx]);
+    CrossTabSync.broadcast('sync_sample', _sampleToSyncJson(_samples[sIdx]));
+
+    notifyListeners();
+    return savedReport;
   }
 
   /// 7. Pathologist Digital Verification & Signature (Transitions to Report Ready)
@@ -1087,6 +1036,7 @@ class CentralDataStore extends ChangeNotifier {
     );
     _reports[rIdx] = verified;
     _syncReportToFirestore(verified);
+    CrossTabSync.broadcast('sync_report', _reportToSyncJson(verified));
 
     // Transition Sample to reportReady
     final sIdx = _samples.indexWhere((s) => s.barcode.toUpperCase() == rep.sampleBarcode.toUpperCase());
@@ -1122,6 +1072,13 @@ class CentralDataStore extends ChangeNotifier {
       _syncOrderToFirestore(_orders[oIdx]);
     }
 
+    if (sIdx != -1) {
+      CrossTabSync.broadcast('sync_sample', _sampleToSyncJson(_samples[sIdx]));
+    }
+    if (oIdx != -1) {
+      CrossTabSync.broadcast('sync_order', _orderToSyncJson(_orders[oIdx]));
+    }
+
     notifyListeners();
     return verified;
   }
@@ -1131,7 +1088,7 @@ class CentralDataStore extends ChangeNotifier {
     required String barcode,
     required String rejectionReason,
     String? clinicalNotes,
-    String technicianName = 'Dr. Sarah Chen (#LAB-501)',
+    String technicianName = 'Aryan (#LAB-ARYAN)',
   }) {
     final now = DateTime.now();
     String patientName = 'Patient';
@@ -1154,7 +1111,7 @@ class CentralDataStore extends ChangeNotifier {
         id: 'EV-REJ-$barcode-${now.millisecondsSinceEpoch}',
         sampleBarcode: barcode,
         toStatus: SampleStatus.rejected,
-        actorId: 'LAB-501',
+        actorId: 'LAB-ARYAN',
         actorName: technicianName,
         actorRole: UserRole.labTechnician,
         timestamp: now,
@@ -1177,7 +1134,7 @@ class CentralDataStore extends ChangeNotifier {
       patientName: patientName,
       testName: testName,
       rejectionReason: rejectionReason,
-      technicianId: 'LAB-501',
+      technicianId: 'LAB-ARYAN',
       technicianName: technicianName,
       rejectedAt: now,
       clinicalNotes: clinicalNotes,
@@ -1219,6 +1176,7 @@ class CentralDataStore extends ChangeNotifier {
       _samples.insert(0, sample);
     }
     _syncSampleToFirestore(sample);
+    CrossTabSync.broadcast('sync_sample', _sampleToSyncJson(sample));
     notifyListeners();
   }
 
@@ -1237,4 +1195,102 @@ class CentralDataStore extends ChangeNotifier {
       return null;
     }
   }
+
+  /// Immediately registers/updates a user locally and pushes to Firestore
+  void registerOrUpdateUser(UserModel user) {
+    final idx = _users.indexWhere((u) => u.id == user.id || (user.email != null && user.email!.isNotEmpty && u.email == user.email));
+    if (idx != -1) {
+      _users[idx] = user;
+    } else {
+      _users.insert(0, user);
+    }
+
+    // Also update staff roster
+    final sIdx = _staff.indexWhere((s) => s.id == user.id || (user.email != null && user.email!.isNotEmpty && s.email == user.email));
+    final staffMember = userToStaffAllocation(
+      user,
+      assignedBranchName: _branches.firstWhere(
+        (b) => b.id == user.assignedBranchId,
+        orElse: () => _branches.first,
+      ).name,
+    );
+    if (sIdx != -1) {
+      _staff[sIdx] = staffMember;
+    } else {
+      _staff.insert(0, staffMember);
+    }
+
+    _syncUserToFirestore(user);
+    notifyListeners();
+  }
+
+  void _syncUserToFirestore(UserModel user) {
+    final fs = _getOrInitFirestore();
+    if (fs == null) return;
+    try {
+      fs.collection('users').doc(user.id).set(user.toMap(), SetOptions(merge: true)).catchError((e) {
+        debugPrint('Firestore user sync warning: $e');
+      });
+    } catch (e) {
+      debugPrint('Firestore user sync error: $e');
+    }
+  }
+
+  void toggleStaffDuty(String staffId) {
+    final sIdx = _staff.indexWhere((s) => s.id == staffId);
+    if (sIdx != -1) {
+      final cur = _staff[sIdx];
+      _staff[sIdx] = cur.copyWith(isOnDuty: !cur.isOnDuty);
+      notifyListeners();
+    }
+  }
+
+  void reallocateStaff({
+    required String staffId,
+    required String targetBranchId,
+    required String targetBranchName,
+  }) {
+    final sIdx = _staff.indexWhere((s) => s.id == staffId);
+    if (sIdx != -1) {
+      final cur = _staff[sIdx];
+      _staff[sIdx] = cur.copyWith(
+        assignedBranchId: targetBranchId,
+        assignedBranchName: targetBranchName,
+      );
+      final uIdx = _users.indexWhere((u) => u.id == staffId);
+      if (uIdx != -1) {
+        final updatedUser = _users[uIdx].copyWith(assignedBranchId: targetBranchId);
+        _users[uIdx] = updatedUser;
+        _syncUserToFirestore(updatedUser);
+      }
+      notifyListeners();
+    }
+  }
+
+  void addStaffMember(StaffAllocationModel staff) {
+    final sIdx = _staff.indexWhere((s) => s.id == staff.id);
+    if (sIdx != -1) {
+      _staff[sIdx] = staff;
+    } else {
+      _staff.insert(0, staff);
+    }
+    final user = UserModel(
+      id: staff.id,
+      name: staff.name,
+      phoneNumber: staff.phoneNumber,
+      email: staff.email,
+      role: staff.role,
+      assignedBranchId: staff.assignedBranchId,
+      createdAt: DateTime.now(),
+    );
+    final uIdx = _users.indexWhere((u) => u.id == staff.id);
+    if (uIdx != -1) {
+      _users[uIdx] = user;
+    } else {
+      _users.insert(0, user);
+    }
+    _syncUserToFirestore(user);
+    notifyListeners();
+  }
 }
+

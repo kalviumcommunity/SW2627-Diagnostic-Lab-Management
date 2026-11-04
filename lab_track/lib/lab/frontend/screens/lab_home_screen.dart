@@ -13,6 +13,9 @@ import '../widgets/qc_rejection_dialog.dart';
 import '../widgets/rack_detail_modal.dart';
 import '../widgets/result_entry_dialog.dart';
 import '../../../shared/widgets/universal_qr_scanner_modal.dart';
+import '../../../shared/services/pdf/pdf_report_service.dart';
+import '../../../data/services/scanner_service.dart';
+import '../../../data/services/central_data_store.dart';
 
 /// Clinical Laboratory & Pathologist Station Portal
 /// Features courier accessioning, visual analyzer racks, pre-analytical QC,
@@ -84,14 +87,135 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
     if (!mounted) return;
 
     if (success) {
+      final accessionedSample = CentralDataStore.instance.getSample(barcode) ??
+          CentralDataStore.instance.samples.firstWhere(
+            (s) => s.status == SampleStatus.receivedAtLab,
+            orElse: () => CentralDataStore.instance.samples.first,
+          );
       _quickScanController.clear();
+      HapticFeedback.heavyImpact();
+      _showAccessionCertificateDialog(accessionedSample, barcode);
+    } else {
+      final err = context.read<LabProvider>().errorMessage ?? 'Accession failed';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Vial $barcode checked in to Central Reference Lab.'),
-          backgroundColor: AppColors.success,
+          content: Text(err),
+          backgroundColor: AppColors.error,
         ),
       );
     }
+  }
+
+  void _showAccessionCertificateDialog(SampleModel? sample, String rawCode) {
+    final isHandover = ScannerService.isHandoverQr(rawCode);
+    final handoverData = isHandover ? ScannerService.parseHandoverQr(rawCode) : null;
+    final sender = handoverData?.senderName ?? 'Phlebotomist Praveen';
+    final tempStr = handoverData?.temperatureC != null
+        ? '${handoverData!.temperatureC!.toStringAsFixed(1)}°C'
+        : (sample?.temperatureStatus ?? '4.2°C (Cold-Chain Verified)');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        contentPadding: const EdgeInsets.all(22),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                gradient: AppColors.purpleIndigoGradient,
+                shape: BoxShape.circle,
+                boxShadow: AppColors.glowShadow(const Color(0xFF7C3AED), opacity: 0.35),
+              ),
+              child: const Icon(Icons.biotech_rounded, color: Colors.white, size: 36),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Specimen Accession Confirmed',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Transferred from ' + sender + ' to Lab Tech Aryan',
+              style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFAF5FF),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE9D5FF)),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Specimen / Vials:', style: TextStyle(fontSize: 11.5, color: Colors.grey)),
+                      Text(
+                        sample?.barcode ?? (isHandover ? '${handoverData?.sampleBarcodes.length} Vials' : rawCode),
+                        style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF5B21B6)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Patient:', style: TextStyle(fontSize: 11.5, color: Colors.grey)),
+                      Text(
+                        sample?.patientName ?? 'Virender',
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: Color(0xFF0F172A)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Cold-Chain Temp:', style: TextStyle(fontSize: 11.5, color: Colors.grey)),
+                      Text(
+                        tempStr + ' (INTACT ✓)',
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Color(0xFF15803D)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Text('Assigned Desk:', style: TextStyle(fontSize: 11.5, color: Colors.grey)),
+                      Text('Apex Central Lab • Aryan', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF7C3AED))),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => Navigator.pop(ctx),
+                icon: const Icon(Icons.check_circle_rounded, size: 18),
+                label: const Text('Accession Complete', style: TextStyle(fontWeight: FontWeight.w800)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF7C3AED),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -227,7 +351,7 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
                 Row(
                   children: [
                     Text(
-                      user?.name ?? 'Dr. Sarah Chen',
+                      user?.name ?? 'Aryan',
                       style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                     ),
                     const SizedBox(width: 8),
@@ -423,7 +547,7 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
               const Expanded(
                 child: Text('ACTIVE ANALYZER SPECIMEN RACKS', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary)),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text('${provider.racks.length} Racks Online', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: AppColors.textTertiary, fontWeight: FontWeight.w600)),
             ],
           ),
@@ -435,7 +559,7 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
               crossAxisCount: MediaQuery.sizeOf(context).width < 900 ? 1 : 2,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: MediaQuery.sizeOf(context).width < 900 ? 5.0 : 2.3,
+              childAspectRatio: MediaQuery.sizeOf(context).width < 900 ? 2.5 : 2.3,
             ),
             itemCount: provider.racks.length,
             itemBuilder: (context, index) {
@@ -453,7 +577,7 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
               const Expanded(
                 child: Text('INCOMING COURIER TRANSIT BATCHES', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary)),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text('${provider.incomingCouriers.length} Pending Intake', style: const TextStyle(fontSize: 12, color: AppColors.textTertiary, fontWeight: FontWeight.w600)),
             ],
           ),
@@ -485,7 +609,10 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
         onTap: () {
           showDialog(
             context: context,
-            builder: (_) => RackDetailModal(rack: rack),
+            builder: (_) => ChangeNotifierProvider.value(
+              value: context.read<LabProvider>(),
+              child: RackDetailModal(rack: rack),
+            ),
           );
         },
         child: Padding(
@@ -507,7 +634,7 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
                   ),
                 ],
               ),
-              const Spacer(),
+              const SizedBox(height: 10),
               Text(rack.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
               Text(rack.analyzerName, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary), overflow: TextOverflow.ellipsis),
               const SizedBox(height: 8),
@@ -640,6 +767,12 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
   }
 
   Widget _buildTestingSpecimenCard(SampleModel sample) {
+    final labProvider = context.read<LabProvider>();
+    final existingReport = labProvider.reports.where(
+      (r) => r.sampleBarcode.toUpperCase() == sample.barcode.toUpperCase()
+    ).firstOrNull;
+    final hasReport = existingReport != null;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -681,6 +814,24 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
                             ),
                           ),
                         ),
+                        if (hasReport) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Findings Saved • ${existingReport.status}',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF15803D),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 2),
@@ -719,7 +870,10 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
                 onPressed: () {
                   showDialog(
                     context: context,
-                    builder: (_) => QcRejectionDialog(sample: sample),
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: context.read<LabProvider>(),
+                      child: QcRejectionDialog(sample: sample),
+                    ),
                   );
                 },
                 style: OutlinedButton.styleFrom(
@@ -736,17 +890,20 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
                 onPressed: () {
                   showDialog(
                     context: context,
-                    builder: (_) => ResultEntryDialog(sample: sample),
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: context.read<LabProvider>(),
+                      child: ResultEntryDialog(sample: sample, existingReport: existingReport),
+                    ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7C3AED),
+                  backgroundColor: hasReport ? const Color(0xFF15803D) : const Color(0xFF7C3AED),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                icon: const Icon(Icons.edit_note_rounded, size: 18),
-                label: const Text('Enter Analyzer Findings', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                icon: Icon(hasReport ? Icons.check_circle_outline_rounded : Icons.edit_note_rounded, size: 18),
+                label: Text(hasReport ? 'Edit / View Findings' : 'Enter Analyzer Findings', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
               ),
             ],
           ),
@@ -771,8 +928,10 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
             children: [
               const Icon(Icons.draw_rounded, size: 18, color: Color(0xFF15803D)),
               const SizedBox(width: 8),
-              const Text('AWAITING CLINICAL AUTHORIZATION', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary)),
-              const Spacer(),
+              const Expanded(
+                child: Text('AWAITING CLINICAL AUTHORIZATION', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary)),
+              ),
+              const SizedBox(width: 8),
               Text('${pendingReports.length} Reports Ready for Review', style: const TextStyle(fontSize: 12, color: AppColors.textTertiary, fontWeight: FontWeight.w600)),
             ],
           ),
@@ -796,8 +955,10 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
             children: [
               const Icon(Icons.verified_rounded, size: 18, color: AppColors.success),
               const SizedBox(width: 8),
-              const Text('RECENTLY AUTHORIZED & RELEASED REPORTS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary)),
-              const Spacer(),
+              const Expanded(
+                child: Text('RECENTLY AUTHORIZED & RELEASED REPORTS', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary)),
+              ),
+              const SizedBox(width: 8),
               Text('${verifiedReports.length} Authorized', style: const TextStyle(fontSize: 12, color: AppColors.textTertiary, fontWeight: FontWeight.w600)),
             ],
           ),
@@ -877,7 +1038,10 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
               onPressed: () {
                 showDialog(
                   context: context,
-                  builder: (_) => PathologistSignDialog(report: report),
+                  builder: (_) => ChangeNotifierProvider.value(
+                    value: context.read<LabProvider>(),
+                    child: PathologistSignDialog(report: report),
+                  ),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -922,6 +1086,17 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
             decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(6)),
             child: const Text('READY & VERIFIED', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF166534))),
           ),
+          const SizedBox(width: 8),
+          IconButton(
+            tooltip: 'Download Official PDF',
+            icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF15803D), size: 22),
+            onPressed: () async {
+              await PdfReportService.downloadOfficialPdf(
+                context: context,
+                report: report,
+              );
+            },
+          ),
         ],
       ),
     );
@@ -941,18 +1116,20 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
             children: const [
               Icon(Icons.monitor_heart_rounded, size: 18, color: Color(0xFF7C3AED)),
               SizedBox(width: 8),
-              Text('CONNECTED CLINICAL ANALYZERS HARDWARE STATUS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary)),
+              Expanded(
+                child: Text('CONNECTED CLINICAL ANALYZERS HARDWARE STATUS', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary)),
+              ),
             ],
           ),
           const SizedBox(height: 12),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: MediaQuery.sizeOf(context).width < 700 ? 1 : 2,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 2.2,
+              childAspectRatio: MediaQuery.sizeOf(context).width < 700 ? 2.8 : 2.2,
             ),
             itemCount: provider.analyzers.length,
             itemBuilder: (context, index) {
@@ -987,7 +1164,7 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
                     ),
                     const SizedBox(height: 2),
                     Text('${eq.department} • Model: ${eq.modelNumber}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                    const Spacer(),
+                    const SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -1023,8 +1200,10 @@ class _LabHomeScreenScaffoldState extends State<_LabHomeScreenScaffold> with Sin
             children: [
               const Icon(Icons.warning_amber_rounded, size: 18, color: AppColors.error),
               const SizedBox(width: 8),
-              const Text('PRE-ANALYTICAL QUALITY CONTROL REJECTION LOG', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary)),
-              const Spacer(),
+              const Expanded(
+                child: Text('PRE-ANALYTICAL QUALITY CONTROL REJECTION LOG', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: AppColors.textSecondary)),
+              ),
+              const SizedBox(width: 8),
               Text('${provider.qcRejections.length} Rejections', style: const TextStyle(fontSize: 12, color: AppColors.textTertiary, fontWeight: FontWeight.w600)),
             ],
           ),

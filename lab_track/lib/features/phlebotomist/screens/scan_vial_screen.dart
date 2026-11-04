@@ -1,1 +1,1 @@
-﻿// Screen for scanning sample vial barcodes during collection.
+// Screen for scanning sample vial barcodes during collection.

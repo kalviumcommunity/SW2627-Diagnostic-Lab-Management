@@ -86,35 +86,35 @@ class _RoleAuthScreenState extends State<RoleAuthScreen> {
   void _prefillDemoFields() {
     switch (_currentRole) {
       case UserRole.patient:
-        _emailController.text = 'john.doe@example.com';
-        _nameController.text = 'John Doe';
-        _ageController.text = '38';
-        _phoneController.text = '9876543210';
-        _addressController.text = 'Flat 4B, Sunrise Residency, Sector 14';
+        _emailController.text = 'virender@labtrack.com';
+        _nameController.text = 'Virender';
+        _ageController.text = '24';
+        _phoneController.text = '+91 98765 00003';
+        _addressController.text = 'House 420, Tension Colony, New Delhi';
         break;
       case UserRole.phlebotomist:
-        _emailController.text = 'rahul.phlebo@labtrack.com';
-        _nameController.text = 'Rahul Verma';
-        _badgeIdController.text = 'PH-204';
-        _phoneController.text = '9876511111';
+        _emailController.text = 'praveen@labtrack.com';
+        _nameController.text = 'Praveen';
+        _badgeIdController.text = 'PH-PRAVEEN';
+        _phoneController.text = '+91 98765 00002';
         break;
       case UserRole.labTechnician:
-        _emailController.text = 'sarah.labtech@labtrack.com';
-        _nameController.text = 'Dr. Sarah Chen';
-        _badgeIdController.text = 'LAB-501';
-        _phoneController.text = '9876555555';
+        _emailController.text = 'aryan.lab@labtrack.com';
+        _nameController.text = 'Aryan';
+        _badgeIdController.text = 'LAB-ARYAN';
+        _phoneController.text = '+91 98765 00001';
         break;
       case UserRole.frontDesk:
-        _emailController.text = 'priya.frontdesk@labtrack.com';
-        _nameController.text = 'Priya Sharma';
-        _badgeIdController.text = 'FD-108';
-        _phoneController.text = '9876522222';
+        _emailController.text = 'aryan.frontdesk@labtrack.com';
+        _nameController.text = 'Aryan';
+        _badgeIdController.text = 'FD-ARYAN';
+        _phoneController.text = '+91 98765 00001';
         break;
       case UserRole.admin:
-        _emailController.text = 'dr.malhotra@labtrack.com';
-        _nameController.text = 'Dr. Vikram Malhotra';
+        _emailController.text = 'ritu.admin@labtrack.com';
+        _nameController.text = 'Ritu mam';
         _adminPasscodeController.text = 'APEX-ADMIN-SECURE';
-        _phoneController.text = '9876533333';
+        _phoneController.text = '+91 98765 00000';
         break;
     }
   }
@@ -191,15 +191,15 @@ class _RoleAuthScreenState extends State<RoleAuthScreen> {
   String get _demoPersonaName {
     switch (_currentRole) {
       case UserRole.patient:
-        return 'John Doe (Patient)';
+        return 'Virender (Patient)';
       case UserRole.phlebotomist:
-        return 'Rahul Verma (#PH-204)';
+        return 'Praveen (#PH-PRAVEEN)';
       case UserRole.labTechnician:
-        return 'Dr. Sarah Chen (#LAB-501)';
+        return 'Aryan (#LAB-ARYAN)';
       case UserRole.frontDesk:
-        return 'Priya Sharma (Desk #1)';
+        return 'Aryan (Front Desk)';
       case UserRole.admin:
-        return 'Dr. Vikram Malhotra (HQ)';
+        return 'Ritu mam (Admin)';
     }
   }
 

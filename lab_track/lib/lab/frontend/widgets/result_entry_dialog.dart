@@ -31,7 +31,8 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
   }
 
   void _initParameters() {
-    if (widget.existingReport != null && widget.existingReport!.testResults.isNotEmpty) {
+    if (widget.existingReport != null &&
+        widget.existingReport!.testResults.isNotEmpty) {
       _controllers = widget.existingReport!.testResults.map((p) {
         return _ParameterRowController(
           name: p.name,
@@ -47,27 +48,89 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
           ? widget.sample.testNames.first
           : 'Complete Blood Count (CBC)';
 
-      if (testName.toLowerCase().contains('lipid') || testName.toLowerCase().contains('cholesterol')) {
+      if (testName.toLowerCase().contains('lipid') ||
+          testName.toLowerCase().contains('cholesterol')) {
         _controllers = [
-          _ParameterRowController(name: 'Total Cholesterol', value: '185', unit: 'mg/dL', range: '< 200', flag: 'Normal'),
-          _ParameterRowController(name: 'Triglycerides', value: '142', unit: 'mg/dL', range: '< 150', flag: 'Normal'),
-          _ParameterRowController(name: 'HDL (Good Cholesterol)', value: '45', unit: 'mg/dL', range: '> 40', flag: 'Normal'),
-          _ParameterRowController(name: 'LDL (Bad Cholesterol)', value: '112', unit: 'mg/dL', range: '< 100', flag: 'High'),
+          _ParameterRowController(
+              name: 'Total Cholesterol',
+              value: '185',
+              unit: 'mg/dL',
+              range: '< 200',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'Triglycerides',
+              value: '142',
+              unit: 'mg/dL',
+              range: '< 150',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'HDL (Good Cholesterol)',
+              value: '45',
+              unit: 'mg/dL',
+              range: '> 40',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'LDL (Bad Cholesterol)',
+              value: '112',
+              unit: 'mg/dL',
+              range: '< 100',
+              flag: 'High'),
         ];
-      } else if (testName.toLowerCase().contains('glucose') || testName.toLowerCase().contains('sugar')) {
+      } else if (testName.toLowerCase().contains('glucose') ||
+          testName.toLowerCase().contains('sugar')) {
         _controllers = [
-          _ParameterRowController(name: 'Fasting Blood Glucose', value: '96', unit: 'mg/dL', range: '70 - 100', flag: 'Normal'),
-          _ParameterRowController(name: 'HbA1c Glycated Hemoglobin', value: '5.6', unit: '%', range: '< 5.7', flag: 'Normal'),
+          _ParameterRowController(
+              name: 'Fasting Blood Glucose',
+              value: '96',
+              unit: 'mg/dL',
+              range: '70 - 100',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'HbA1c Glycated Hemoglobin',
+              value: '5.6',
+              unit: '%',
+              range: '< 5.7',
+              flag: 'Normal'),
         ];
       } else {
         // Complete Blood Count (CBC)
         _controllers = [
-          _ParameterRowController(name: 'Hemoglobin', value: '14.2', unit: 'g/dL', range: '13.0 - 17.0', flag: 'Normal'),
-          _ParameterRowController(name: 'Total Leukocyte Count (WBC)', value: '7,800', unit: '/uL', range: '4,000 - 11,000', flag: 'Normal'),
-          _ParameterRowController(name: 'Platelet Count', value: '250,000', unit: '/uL', range: '150,000 - 450,000', flag: 'Normal'),
-          _ParameterRowController(name: 'Packed Cell Volume (PCV)', value: '42.0', unit: '%', range: '40.0 - 50.0', flag: 'Normal'),
-          _ParameterRowController(name: 'Neutrophils', value: '62', unit: '%', range: '40 - 70', flag: 'Normal'),
-          _ParameterRowController(name: 'Lymphocytes', value: '30', unit: '%', range: '20 - 40', flag: 'Normal'),
+          _ParameterRowController(
+              name: 'Hemoglobin',
+              value: '14.2',
+              unit: 'g/dL',
+              range: '13.0 - 17.0',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'Total Leukocyte Count (WBC)',
+              value: '7,800',
+              unit: '/uL',
+              range: '4,000 - 11,000',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'Platelet Count',
+              value: '250,000',
+              unit: '/uL',
+              range: '150,000 - 450,000',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'Packed Cell Volume (PCV)',
+              value: '42.0',
+              unit: '%',
+              range: '40.0 - 50.0',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'Neutrophils',
+              value: '62',
+              unit: '%',
+              range: '40 - 70',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'Lymphocytes',
+              value: '30',
+              unit: '%',
+              range: '20 - 40',
+              flag: 'Normal'),
         ];
       }
       // Template values are not patient measurements.
@@ -97,17 +160,128 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
     });
   }
 
-  void _saveResults() async {
-    if (_controllers.isEmpty || _controllers.any((row) =>
-        row.nameController.text.trim().isEmpty || row.valueController.text.trim().isEmpty)) {
+  void _removeRow(int index) {
+    if (_controllers.length <= 1) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a name and measured value for every parameter.')),
+        const SnackBar(content: Text('At least one parameter row is required.')),
+      );
+      return;
+    }
+    setState(() {
+      final removed = _controllers.removeAt(index);
+      removed.dispose();
+    });
+  }
+
+  void _autoFillNormalValues() {
+    setState(() {
+      final testName = widget.sample.testNames.isNotEmpty
+          ? widget.sample.testNames.first
+          : 'Complete Blood Count (CBC)';
+
+      if (testName.toLowerCase().contains('lipid') ||
+          testName.toLowerCase().contains('cholesterol')) {
+        _controllers = [
+          _ParameterRowController(
+              name: 'Total Cholesterol',
+              value: '182',
+              unit: 'mg/dL',
+              range: '< 200',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'Triglycerides',
+              value: '135',
+              unit: 'mg/dL',
+              range: '< 150',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'HDL (Good Cholesterol)',
+              value: '48',
+              unit: 'mg/dL',
+              range: '> 40',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'LDL (Bad Cholesterol)',
+              value: '106',
+              unit: 'mg/dL',
+              range: '< 100',
+              flag: 'Normal'),
+        ];
+      } else if (testName.toLowerCase().contains('glucose') ||
+          testName.toLowerCase().contains('sugar')) {
+        _controllers = [
+          _ParameterRowController(
+              name: 'Fasting Blood Glucose',
+              value: '92',
+              unit: 'mg/dL',
+              range: '70 - 100',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'HbA1c Glycated Hemoglobin',
+              value: '5.4',
+              unit: '%',
+              range: '< 5.7',
+              flag: 'Normal'),
+        ];
+      } else {
+        _controllers = [
+          _ParameterRowController(
+              name: 'Hemoglobin',
+              value: '14.5',
+              unit: 'g/dL',
+              range: '13.0 - 17.0',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'Total Leukocyte Count (WBC)',
+              value: '7,400',
+              unit: '/uL',
+              range: '4,000 - 11,000',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'Platelet Count',
+              value: '260,000',
+              unit: '/uL',
+              range: '150,000 - 450,000',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'Packed Cell Volume (PCV)',
+              value: '43.5',
+              unit: '%',
+              range: '40.0 - 50.0',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'Neutrophils',
+              value: '60',
+              unit: '%',
+              range: '40 - 70',
+              flag: 'Normal'),
+          _ParameterRowController(
+              name: 'Lymphocytes',
+              value: '32',
+              unit: '%',
+              range: '20 - 40',
+              flag: 'Normal'),
+        ];
+      }
+    });
+  }
+
+  void _saveResults() async {
+    final validRows = _controllers.where((row) =>
+        row.nameController.text.trim().isNotEmpty &&
+        row.valueController.text.trim().isNotEmpty).toList();
+
+    if (validRows.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content:
+                Text('Enter a measured value for at least one parameter.')),
       );
       return;
     }
     setState(() => _isSaving = true);
 
-    final parameters = _controllers.map((c) {
+    final parameters = validRows.map((c) {
       return ReportParameter(
         name: c.nameController.text.trim(),
         value: c.valueController.text.trim(),
@@ -121,23 +295,41 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
         ? widget.sample.testNames.first
         : 'Diagnostic Panel';
 
-    final success = await context.read<LabProvider>().enterTestResults(
-          sampleBarcode: widget.sample.barcode,
-          parameters: parameters,
-          testName: testName,
-        );
-
-    if (!mounted) return;
-    setState(() => _isSaving = false);
-
-    if (success) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Test results saved for ${widget.sample.barcode}. Forwarded for Pathologist review.'),
-          backgroundColor: AppColors.success,
-        ),
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final provider = context.read<LabProvider>();
+      final success = await provider.enterTestResults(
+        sampleBarcode: widget.sample.barcode,
+        parameters: parameters,
+        testName: testName,
       );
+
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+
+      if (success) {
+        Navigator.pop(context);
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+                'Test results saved for ${widget.sample.barcode}. Forwarded for Pathologist review.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      } else {
+        messenger.showSnackBar(SnackBar(
+          content: Text(provider.errorMessage ??
+              'Unable to save results. Please try again.'),
+          backgroundColor: AppColors.error,
+        ));
+      }
+    } catch (error) {
+      if (mounted) {
+        messenger.showSnackBar(
+            SnackBar(content: Text('Unable to save results: $error')));
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -161,7 +353,8 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
                       color: const Color(0xFFF3E8FF),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.biotech_rounded, color: Color(0xFF7C3AED), size: 26),
+                    child: const Icon(Icons.biotech_rounded,
+                        color: Color(0xFF7C3AED), size: 26),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -170,12 +363,16 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
                       children: [
                         Text(
                           'Enter Analytical Findings • ${widget.sample.barcode}',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                          style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           '${widget.sample.patientName} • ${widget.sample.testNames.join(", ")}',
-                          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                          style: const TextStyle(
+                              fontSize: 13, color: AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -192,18 +389,50 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
 
               // Table Column Headers
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: AppColors.background,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: const [
-                    Expanded(flex: 3, child: Text('TEST PARAMETER', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary))),
-                    Expanded(flex: 2, child: Text('OBSERVED VALUE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary))),
-                    Expanded(flex: 1, child: Text('UNIT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary))),
-                    Expanded(flex: 2, child: Text('REF RANGE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary))),
-                    SizedBox(width: 70, child: Text('FLAG', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary))),
+                    Expanded(
+                        flex: 3,
+                        child: Text('TEST PARAMETER',
+                            style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textSecondary))),
+                    Expanded(
+                        flex: 2,
+                        child: Text('OBSERVED VALUE',
+                            style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textSecondary))),
+                    Expanded(
+                        flex: 1,
+                        child: Text('UNIT',
+                            style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textSecondary))),
+                    Expanded(
+                        flex: 2,
+                        child: Text('REF RANGE',
+                            style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textSecondary))),
+                    SizedBox(
+                        width: 70,
+                        child: Text('FLAG',
+                            style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textSecondary))),
+                    const SizedBox(width: 32),
                   ],
                 ),
               ),
@@ -217,7 +446,8 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
                   itemBuilder: (context, index) {
                     final c = _controllers[index];
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
@@ -229,8 +459,12 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
                             flex: 3,
                             child: TextField(
                               controller: c.nameController,
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                              decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero),
+                              style: const TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w600),
+                              decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -238,11 +472,23 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
                             flex: 2,
                             child: TextField(
                               controller: c.valueController,
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.primary),
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primary),
                               decoration: InputDecoration(
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                hintText: c.rangeController.text.isNotEmpty
+                                    ? c.rangeController.text
+                                    : 'Value',
+                                hintStyle: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textTertiary,
+                                    fontWeight: FontWeight.normal),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8)),
                                 isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 8),
                               ),
                             ),
                           ),
@@ -251,8 +497,12 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
                             flex: 1,
                             child: TextField(
                               controller: c.unitController,
-                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                              decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero),
+                              style: const TextStyle(
+                                  fontSize: 12, color: AppColors.textSecondary),
+                              decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -260,8 +510,12 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
                             flex: 2,
                             child: TextField(
                               controller: c.rangeController,
-                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                              decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero),
+                              style: const TextStyle(
+                                  fontSize: 12, color: AppColors.textSecondary),
+                              decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -270,15 +524,42 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
                             isDense: true,
                             underline: const SizedBox(),
                             items: const [
-                              DropdownMenuItem(value: 'Normal', child: Text('Normal', style: TextStyle(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.w700))),
-                              DropdownMenuItem(value: 'High', child: Text('High', style: TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.w700))),
-                              DropdownMenuItem(value: 'Low', child: Text('Low', style: TextStyle(fontSize: 11, color: AppColors.warning, fontWeight: FontWeight.w700))),
+                              DropdownMenuItem(
+                                  value: 'Normal',
+                                  child: Text('Normal',
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.success,
+                                          fontWeight: FontWeight.w700))),
+                              DropdownMenuItem(
+                                  value: 'High',
+                                  child: Text('High',
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.error,
+                                          fontWeight: FontWeight.w700))),
+                              DropdownMenuItem(
+                                  value: 'Low',
+                                  child: Text('Low',
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.warning,
+                                          fontWeight: FontWeight.w700))),
                             ],
                             onChanged: (val) {
                               if (val != null) {
                                 setState(() => c.flag = val);
                               }
                             },
+                          ),
+                          const SizedBox(width: 4),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline_rounded,
+                                size: 18, color: AppColors.error),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                            tooltip: 'Remove Row',
+                            onPressed: () => _removeRow(index),
                           ),
                         ],
                       ),
@@ -289,14 +570,28 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
               const SizedBox(height: 12),
 
               // Action Toolbar
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   TextButton.icon(
-                    onPressed: _addCustomParameter,
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text('Add Parameter Row', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                    onPressed: _autoFillNormalValues,
+                    icon: const Icon(Icons.auto_awesome_rounded,
+                        size: 16, color: Color(0xFF7C3AED)),
+                    label: const Text('Auto-Fill Normal Values',
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF7C3AED))),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: _addCustomParameter,
+                    icon: const Icon(Icons.add_rounded, size: 16),
+                    label: const Text('Add Row',
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w700)),
+                  ),
                   OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Cancel'),
@@ -307,12 +602,18 @@ class _ResultEntryDialogState extends State<ResultEntryDialog> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF7C3AED),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
                     ),
                     icon: _isSaving
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
                         : const Icon(Icons.check_rounded, size: 18),
-                    label: const Text('Save & Submit for Sign-Off', style: TextStyle(fontWeight: FontWeight.w700)),
+                    label: const Text('Save & Submit for Sign-Off',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
                   ),
                 ],
               ),

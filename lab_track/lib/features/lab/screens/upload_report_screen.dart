@@ -1,1 +1,1 @@
-﻿// Screen for uploading completed test report documents.
+// Screen for uploading completed test report documents.

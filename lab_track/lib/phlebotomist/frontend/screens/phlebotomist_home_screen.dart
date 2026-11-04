@@ -7,6 +7,8 @@ import '../providers/phlebotomist_provider.dart';
 import 'order_detail_screen.dart';
 import 'pickup_list_screen.dart';
 import 'scan_vial_screen.dart';
+import '../widgets/cold_box_handover_qr_modal.dart';
+import '../../../domain/enums/sample_status.dart';
 
 /// God-Level Phlebotomist Doorstep Operations Cockpit
 class PhlebotomistHomeScreen extends StatefulWidget {
@@ -63,7 +65,7 @@ class _PhlebotomistHomeScreenState extends State<PhlebotomistHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> tabs = [
-      const _PhlebotomistDashboardTab(),
+      _PhlebotomistDashboardTab(onNavigateTab: _onTabTapped),
       const PickupListScreen(showAppBar: false),
       const ScanVialScreen(),
       const _ColdBoxCustodyTab(),
@@ -158,7 +160,8 @@ class _PhlebotomistHomeScreenState extends State<PhlebotomistHomeScreen> {
 }
 
 class _PhlebotomistDashboardTab extends StatelessWidget {
-  const _PhlebotomistDashboardTab();
+  final void Function(int) onNavigateTab;
+  const _PhlebotomistDashboardTab({required this.onNavigateTab});
 
   @override
   Widget build(BuildContext context) {
@@ -199,7 +202,7 @@ class _PhlebotomistDashboardTab extends StatelessWidget {
                           Row(
                             children: [
                               Text(
-                                user?.name ?? 'Rahul Verma',
+                                user?.name ?? 'Praveen',
                                 style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                               ),
                               const SizedBox(width: 6),
@@ -218,7 +221,7 @@ class _PhlebotomistDashboardTab extends StatelessWidget {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            'Field Operative • Badge #${user?.id ?? "PH-204"} • Hub Spoke-01',
+                            'Field Operative • Badge #${user?.id ?? "PH-PRAVEEN"} • Hub Spoke-01',
                             style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                           ),
                         ],
@@ -496,9 +499,7 @@ class _PhlebotomistDashboardTab extends StatelessWidget {
 
           // Protocol 1: Scan & Bind Barcode
           GodLevelCard(
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const ScanVialScreen()));
-            },
+            onTap: () => onNavigateTab(2),
             padding: const EdgeInsets.all(16),
             borderRadius: 16,
             child: Row(
@@ -580,7 +581,7 @@ class _PhlebotomistDashboardTab extends StatelessWidget {
   static void _showHubHandoverDialog(BuildContext context) {
     final provider = context.read<PhlebotomistProvider>();
     final samples = provider.collectedSamples;
-    final receiverController = TextEditingController(text: 'Priya Sharma (Desk #1)');
+    final receiverController = TextEditingController(text: 'Aryan (Desk #1)');
 
     showDialog(
       context: context,
@@ -627,7 +628,7 @@ class _PhlebotomistDashboardTab extends StatelessWidget {
                 onPressed: () async {
                   final barcodes = samples.map((s) => s.barcode).toList();
                   final success = await provider.handoverBatchToHub(
-                    phlebotomistId: 'PH-204',
+                    phlebotomistId: provider.phlebotomistId ?? 'PH-PRAVEEN',
                     branchId: 'BR-004',
                     branchName: 'Branch Hub 4 - Central',
                     sampleBarcodes: barcodes,
@@ -764,15 +765,35 @@ class _ColdBoxCustodyTab extends StatelessWidget {
               ...samples.map((s) => _buildSampleTile(context, s)),
 
             const SizedBox(height: 24),
-            // Handover button
-            if (samples.isNotEmpty)
+            // Handover buttons
+            if (samples.isNotEmpty) ...[
               GlowingActionButton(
-                label: 'Handover All Specimens to Spoke Lab',
-                icon: Icons.move_to_inbox_rounded,
-                gradient: AppColors.emeraldTealGradient,
-                glowColor: AppColors.success,
-                onPressed: () => _PhlebotomistDashboardTab._showHubHandoverDialog(context),
+                label: 'Show Lab Handover QR Pass',
+                icon: Icons.qr_code_2_rounded,
+                gradient: AppColors.purpleIndigoGradient,
+                glowColor: const Color(0xFF7C3AED),
+                onPressed: () {
+                  ColdBoxHandoverQrModal.show(
+                    context,
+                    samples: samples,
+                    coldBoxTemp: provider.coldBoxTemp,
+                    phlebotomistName: 'Praveen',
+                    phlebotomistId: provider.phlebotomistId ?? 'PH-PRAVEEN',
+                  );
+                },
               ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () => _PhlebotomistDashboardTab._showHubHandoverDialog(context),
+                icon: const Icon(Icons.move_to_inbox_rounded, size: 18),
+                label: const Text('Transfer to Branch Spoke Desk', style: TextStyle(fontWeight: FontWeight.w700)),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  side: const BorderSide(color: AppColors.border),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -780,6 +801,12 @@ class _ColdBoxCustodyTab extends StatelessWidget {
   }
 
   Widget _buildSampleTile(BuildContext context, SampleModel sample) {
+    final isHandedOver = sample.status == SampleStatus.receivedAtLab ||
+        sample.status == SampleStatus.processing ||
+        sample.status == SampleStatus.reportReady ||
+        sample.status == SampleStatus.delivered ||
+        sample.currentCustodianId == 'LAB-ARYAN';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: GodLevelCard(
@@ -790,17 +817,21 @@ class _ColdBoxCustodyTab extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7),
+                color: isHandedOver ? const Color(0xFFECFDF5) : const Color(0xFFFEF3C7),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.3)),
+                border: Border.all(
+                  color: isHandedOver
+                      ? const Color(0xFF10B981).withOpacity(0.3)
+                      : const Color(0xFFF59E0B).withOpacity(0.3),
+                ),
               ),
               child: Text(
                 sample.barcode,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'monospace',
                   fontWeight: FontWeight.w900,
                   fontSize: 13,
-                  color: Color(0xFF92400E),
+                  color: isHandedOver ? const Color(0xFF047857) : const Color(0xFF92400E),
                 ),
               ),
             ),
@@ -819,8 +850,14 @@ class _ColdBoxCustodyTab extends StatelessWidget {
                     style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
                   ),
                   Text(
-                    sample.temperatureStatus ?? '4.2°C (Cold-Chain Verified)',
-                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.successDark),
+                    isHandedOver
+                        ? '✓ Handed over to Lab Tech Aryan (#LAB-ARYAN)'
+                        : (sample.temperatureStatus ?? '4.2°C (Cold-Chain Verified)'),
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: isHandedOver ? const Color(0xFF15803D) : AppColors.successDark,
+                    ),
                   ),
                 ],
               ),

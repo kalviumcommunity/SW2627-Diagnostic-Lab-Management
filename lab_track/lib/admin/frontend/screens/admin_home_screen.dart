@@ -189,7 +189,7 @@ class _AdminOverviewTab extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            user?.name ?? 'Dr. Vikram Malhotra',
+                            user?.name ?? 'Ritu mam',
                             style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                           ),
                           const SizedBox(width: 8),

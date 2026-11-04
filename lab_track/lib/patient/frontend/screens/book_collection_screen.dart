@@ -3,13 +3,15 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../shared/shared.dart';
 import '../../../auth/frontend/providers/auth_provider.dart';
+import '../../../data/services/central_data_store.dart';
 import '../../backend/models/patient_booking_request.dart';
 import '../../backend/models/patient_test_catalog.dart';
 import '../providers/patient_provider.dart';
 
 /// God-Level Home Specimen Collection Booking Screen
 class BookCollectionScreen extends StatefulWidget {
-  const BookCollectionScreen({super.key});
+  final void Function(String? barcode)? onNavigateToTracking;
+  const BookCollectionScreen({super.key, this.onNavigateToTracking});
 
   @override
   State<BookCollectionScreen> createState() => _BookCollectionScreenState();
@@ -25,9 +27,10 @@ class _BookCollectionScreenState extends State<BookCollectionScreen> {
 
   late List<Map<String, dynamic>> _tests;
 
-  final DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
+  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   String _selectedSlot = '07:00 AM - 08:30 AM (Fasting)';
-  String _selectedBranch = 'Central Diagnostic Lab - Sector 5';
+  late String _selectedBranch;
+  late final List<String> _branches;
 
   final List<String> _timeSlots = [
     '07:00 AM - 08:30 AM (Fasting)',
@@ -37,22 +40,26 @@ class _BookCollectionScreenState extends State<BookCollectionScreen> {
     '05:00 PM - 07:00 PM',
   ];
 
-  final List<String> _branches = [
-    'Central Diagnostic Lab - Sector 5',
-    'Apollo Hub Diagnostic Center',
-    'Metro City Branch',
-    'South Park Specialized Lab',
-  ];
-
   @override
   void initState() {
     super.initState();
     final user = context.read<AuthProvider>().currentUser;
-    _nameController = TextEditingController(text: user?.name ?? 'John Doe');
-    _phoneController = TextEditingController(text: user?.phoneNumber ?? '+91 98765 43210');
+    _nameController = TextEditingController(text: user?.name ?? 'Virender');
+    _phoneController = TextEditingController(text: user?.phoneNumber ?? '+91 98765 00003');
     _addressController = TextEditingController(
-      text: user?.address ?? 'Apartment 4B, Sunrise Residency, Sector 14',
+      text: user?.address ?? 'House 420, Tension Colony, New Delhi',
     );
+
+    final storeBranches = CentralDataStore.instance.branches.map((b) => b.name).toList();
+    _branches = storeBranches.isNotEmpty
+        ? storeBranches
+        : [
+            'Apex Central Reference Laboratory',
+            'Downtown Spoke Center #1',
+            'Central Diagnostic Hub 4',
+            'Noida Sector 18 Express Collection Center',
+          ];
+    _selectedBranch = _branches.first;
 
     _tests = PatientTestCatalog.availableTests.map((t) {
       return {
@@ -167,14 +174,82 @@ class _BookCollectionScreenState extends State<BookCollectionScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 12),
+              // Appointment QR Pass Preview Banner
+              InkWell(
+                onTap: () {
+                  Navigator.pop(ctx);
+                  AppointmentQrPassModal.show(context, order);
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.primary.withOpacity(0.08), const Color(0xFF0284C7).withOpacity(0.12)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(color: AppColors.primary.withOpacity(0.15), blurRadius: 4),
+                          ],
+                        ),
+                        child: const Icon(Icons.qr_code_2_rounded, color: AppColors.primary, size: 22),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Appointment QR Pass Generated',
+                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.primary),
+                            ),
+                            Text(
+                              'Tap to show QR pass to Phlebotomist upon arrival',
+                              style: TextStyle(fontSize: 10.5, color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right_rounded, color: AppColors.primary, size: 18),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
           actions: [
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                AppointmentQrPassModal.show(context, order);
+              },
+              icon: const Icon(Icons.qr_code_2_rounded, size: 16),
+              label: const Text('Show QR Pass'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
             ElevatedButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: () {
+                Navigator.pop(ctx);
+                final barcode = order.sampleBarcodes.isNotEmpty ? order.sampleBarcodes.first : null;
+                widget.onNavigateToTracking?.call(barcode);
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('Track Sample Live'),
@@ -376,6 +451,73 @@ class _BookCollectionScreenState extends State<BookCollectionScreen> {
                     const Text(
                       'Preferred Time Slot & Hub',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Interactive Scheduled Date Picker
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _selectedDate,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 30)),
+                          builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: const ColorScheme.light(
+                                  primary: AppColors.primary,
+                                  onPrimary: Colors.white,
+                                  onSurface: AppColors.textPrimary,
+                                ),
+                              ),
+                              child: child!,
+                            );
+                          },
+                        );
+                        if (picked != null) {
+                          setState(() => _selectedDate = picked);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.event_available_rounded, color: AppColors.primary, size: 22),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Scheduled Collection Date',
+                                    style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    DateFormat('EEEE, d MMMM yyyy').format(_selectedDate),
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text('CHANGE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary)),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 14),
                     DropdownButtonFormField<String>(

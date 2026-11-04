@@ -27,55 +27,7 @@ class FrontDeskService {
     if (_labelsInitialized) return;
     _labelsInitialized = true;
 
-    final now = DateTime.now();
-    _labelStore.addAll([
-      ThermalLabelModel(
-        barcode: 'SMP-88390',
-        orderId: 'ORD-84210',
-        patientName: 'John Doe',
-        patientAgeGender: '38Y / M',
-        testNames: const ['Thyroid Panel', 'HbA1c'],
-        vialType: 'Gold Top (SST Serum Gel)',
-        vialColorValue: 0xFFD97706,
-        volumeRequired: '5.0 mL',
-        branchId: 'branch-spoke-01',
-        branchName: 'Downtown Spoke Center #1',
-        timestamp: now.subtract(const Duration(hours: 4)),
-        priority: 'Routine',
-        isPrinted: true,
-      ),
-      ThermalLabelModel(
-        barcode: 'SMP-90214',
-        orderId: 'ORD-90214',
-        patientName: 'Meena Gupta',
-        patientAgeGender: '45Y / F',
-        testNames: const ['Lipid Profile', 'HbA1c'],
-        vialType: 'Grey Top (Sodium Fluoride)',
-        vialColorValue: 0xFF475569,
-        volumeRequired: '2.0 mL',
-        branchId: 'branch-spoke-01',
-        branchName: 'Downtown Spoke Center #1',
-        timestamp: now.subtract(const Duration(hours: 3)),
-        priority: 'Routine',
-        isPrinted: true,
-      ),
-      ThermalLabelModel(
-        barcode: 'SMP-77401',
-        orderId: 'ORD-77401',
-        patientName: 'Arjun Kapoor',
-        patientAgeGender: '52Y / M',
-        testNames: const ['Complete Blood Count (CBC)'],
-        vialType: 'Purple Top (K2 EDTA)',
-        vialColorValue: 0xFF7C3AED,
-        volumeRequired: '3.0 mL',
-        branchId: 'branch-spoke-01',
-        branchName: 'Downtown Spoke Center #1',
-        timestamp: now.subtract(const Duration(hours: 1)),
-        priority: 'Urgent STAT',
-        isPrinted: true,
-      ),
-    ]);
-  }
+     }
 
   List<OrderModel> get _orderStore => _store.orders;
   List<SampleModel> get _sampleStore => _store.samples;
@@ -203,8 +155,8 @@ class FrontDeskService {
         status: SampleStatus.collected,
         currentBranchId: request.branchId,
         currentBranchName: request.branchName,
-        assignedPhlebotomistId: 'FD-108',
-        assignedPhlebotomistName: 'Priya Sharma (Intake Counter)',
+        assignedPhlebotomistId: 'FD-ARYAN',
+        assignedPhlebotomistName: 'Aryan (Intake Counter)',
         collectedAt: now,
         temperatureC: 4.0,
         notes: 'Walk-in draw completed at front desk counter.',
@@ -214,8 +166,8 @@ class FrontDeskService {
             sampleBarcode: barcode,
             status: SampleStatus.collected,
             timestamp: now,
-            actorId: 'FD-108',
-            actorName: 'Priya Sharma',
+            actorId: 'FD-ARYAN',
+            actorName: 'Aryan',
             actorRole: UserRole.frontDesk,
             locationName: '${request.branchName} - Counter #1',
             temperatureCelsius: 4.0,
@@ -261,8 +213,8 @@ class FrontDeskService {
       branchName: request.branchName,
       status: OrderStatus.inProgress,
       sampleBarcodes: generatedBarcodes,
-      assignedPhlebotomistId: 'FD-108',
-      assignedPhlebotomistName: 'Priya Sharma',
+      assignedPhlebotomistId: 'FD-ARYAN',
+      assignedPhlebotomistName: 'Aryan',
       specialInstructions: 'Priority: ${request.priority}. ${request.clinicalNotes ?? ""}',
       createdAt: now,
     );

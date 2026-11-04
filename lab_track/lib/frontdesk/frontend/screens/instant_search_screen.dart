@@ -22,8 +22,8 @@ class _InstantSearchScreenState extends State<InstantSearchScreen> {
   late TextEditingController _searchController;
 
   final List<String> _quickQueries = [
-    'John Doe',
-    '+91 98765 43210',
+    'Virender',
+    '+91 98765 00003',
     'ORD-84210',
     'SMP-88390',
     'Meena Gupta',

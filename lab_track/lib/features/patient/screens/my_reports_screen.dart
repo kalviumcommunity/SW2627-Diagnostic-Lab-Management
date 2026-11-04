@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../data/models/report_model.dart';
+import '../../../shared/services/pdf/pdf_report_service.dart';
 
 class MyReportsScreen extends StatefulWidget {
   const MyReportsScreen({super.key});
@@ -204,10 +206,11 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Downloading official PDF for ${report['id']}...')),
+                    await PdfReportService.downloadOfficialPdf(
+                      context: context,
+                      report: _mapToReportModel(report),
                     );
                   },
                   icon: const Icon(Icons.download_rounded),
@@ -218,6 +221,27 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
           ),
         );
       },
+    );
+  }
+
+  ReportModel _mapToReportModel(Map<String, dynamic> r) {
+    return ReportModel(
+      id: r['id']?.toString() ?? 'REP-01',
+      orderId: 'ORD-70014',
+      sampleBarcode: r['sampleId']?.toString() ?? 'SMP-90214',
+      patientId: 'PT-84210',
+      patientName: 'Virender',
+      status: 'Verified & Ready',
+      testName: r['testName']?.toString() ?? 'Diagnostic Investigation',
+      branchName: r['labName']?.toString() ?? 'Apex Central Reference Laboratory',
+      pathologistName: r['pathologist']?.toString() ?? 'Aryan (Lab Specialist)',
+      testResults: (r['results'] as List? ?? []).map((p) => ReportParameter(
+        name: p['parameter']?.toString() ?? '',
+        value: p['value']?.toString() ?? '',
+        unit: p['unit']?.toString() ?? '',
+        range: p['normalRange']?.toString() ?? '',
+        flag: p['status']?.toString() ?? 'Normal',
+      )).toList(),
     );
   }
 
@@ -328,9 +352,10 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: ElevatedButton.icon(
-                                        onPressed: () {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('Downloading ${report['id']} PDF...')),
+                                        onPressed: () async {
+                                          await PdfReportService.downloadOfficialPdf(
+                                            context: context,
+                                            report: _mapToReportModel(report),
                                           );
                                         },
                                         icon: const Icon(Icons.download_rounded, size: 16),

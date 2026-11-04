@@ -28,12 +28,12 @@ class PatientProvider extends ChangeNotifier {
   void _loadInitialMockData() {
     final now = DateTime.now();
 
-    // Default sample in-transit for John Doe
+    // Default sample in-transit for Virender
     _activeSample = SampleModel(
       barcode: 'SMP-88390',
       orderId: 'ORD-84210',
       patientId: 'PT-84210',
-      patientName: 'John Doe',
+      patientName: 'Virender',
       testNames: const ['Thyroid & HbA1c Panel'],
       tubeType: 'EDTA + SST Vacutainer',
       status: SampleStatus.inTransit,
@@ -75,7 +75,7 @@ class PatientProvider extends ChangeNotifier {
           status: SampleStatus.receivedAtBranch,
           timestamp: now.subtract(const Duration(minutes: 40)),
           actorId: 'FD-204',
-          actorName: 'Priya Sharma (Intake Desk)',
+          actorName: 'Aryan (Intake Desk)',
           actorRole: UserRole.frontDesk,
           locationName: 'Branch Hub 4 Receiving Rack',
           temperatureCelsius: 4.1,

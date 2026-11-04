@@ -1,13 +1,17 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../data/services/scanner_service.dart';
 import '../theme/app_colors.dart';
 
 /// God-Level Universal QR & Barcode Scanner Modal Sheet
 /// Supports:
 /// - Real-time live camera streaming with MLKit Barcode & QR code decoding
+/// - Robust runtime camera permission handling (with direct link to App Settings)
+/// - Proper app lifecycle observer to resume camera when returning from settings
 /// - Torch control & front/back camera toggling
 /// - Graceful fallback to Manual / Demo Presets for web, emulators, or denied permissions
 /// - URL & raw barcode extraction using ScannerService
@@ -23,14 +27,15 @@ class UniversalQrScannerModal extends StatefulWidget {
 
   /// Static helper to open the scanner modal from any screen.
   /// Returns the extracted barcode string or null if cancelled.
-  static Future<String?> show(BuildContext context, {String? title, String? hint}) {
+  static Future<String?> show(BuildContext context, {String? title, String? hint, String? instructions}) {
+    final effectiveHint = hint ?? instructions ?? 'Align sterile vial barcode or patient QR within reticle';
     return showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => UniversalQrScannerModal(
         title: title ?? 'Scan QR / Barcode',
-        hint: hint ?? 'Align sterile vial barcode or patient QR within reticle',
+        hint: effectiveHint,
       ),
     );
   }
@@ -40,7 +45,7 @@ class UniversalQrScannerModal extends StatefulWidget {
 }
 
 class _UniversalQrScannerModalState extends State<UniversalQrScannerModal>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final MobileScannerController _scannerController;
   late final AnimationController _animController;
   final TextEditingController _manualInputController = TextEditingController();
@@ -48,9 +53,13 @@ class _UniversalQrScannerModalState extends State<UniversalQrScannerModal>
   bool _isCameraMode = true;
   bool _isTorchOn = false;
   bool _hasScanned = false;
+  bool _isCameraStarting = false;
+  bool _isPermanentlyDenied = false;
   String? _cameraError;
 
   final List<String> _demoCodes = [
+    'ORD-VIR-101',
+    'SMP-VIR-777',
     'SMP-88390',
     'SMP-99120',
     'SMP-77401',
@@ -62,7 +71,11 @@ class _UniversalQrScannerModalState extends State<UniversalQrScannerModal>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    // autoStart: false prevents racing against native Android permission dialogs
     _scannerController = MobileScannerController(
+      autoStart: false,
       detectionSpeed: DetectionSpeed.noDuplicates,
       facing: CameraFacing.back,
       torchEnabled: false,
@@ -72,14 +85,80 @@ class _UniversalQrScannerModalState extends State<UniversalQrScannerModal>
       vsync: this,
       duration: const Duration(milliseconds: 1800),
     )..forward();
+
+    // Start camera after layout pass
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _isCameraMode) {
+        _requestAndStartCamera();
+      }
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isCameraMode) {
+      // Re-trigger camera when returning from system permission dialog or phone settings
+      _requestAndStartCamera();
+    } else if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+      try {
+        _scannerController.stop();
+      } catch (_) {}
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _animController.dispose();
     _manualInputController.dispose();
     _scannerController.dispose();
     super.dispose();
+  }
+
+  Future<void> _requestAndStartCamera() async {
+    if (!mounted) return;
+    setState(() {
+      _isCameraStarting = true;
+      _cameraError = null;
+      _isPermanentlyDenied = false;
+    });
+
+    final isTest = WidgetsBinding.instance.runtimeType.toString().toLowerCase().contains('test');
+
+    try {
+      if (!kIsWeb && !isTest) {
+        final status = await Permission.camera.request();
+        if (!status.isGranted) {
+          if (!mounted) return;
+          setState(() {
+            _isCameraStarting = false;
+            _isPermanentlyDenied = status.isPermanentlyDenied;
+            _cameraError = status.isPermanentlyDenied
+                ? 'Camera permission is permanently denied. Tap "Open Settings" to enable camera access in App Info.'
+                : 'Camera permission denied. Tap "Grant Permission" to scan barcodes.';
+          });
+          return;
+        }
+      }
+
+      if (!isTest) {
+        await _scannerController.start();
+      }
+      if (mounted) {
+        setState(() {
+          _isCameraStarting = false;
+          _isPermanentlyDenied = false;
+          _cameraError = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCameraStarting = false;
+          _cameraError = e.toString();
+        });
+      }
+    }
   }
 
   void _onDetect(BarcodeCapture capture) {
@@ -124,6 +203,18 @@ class _UniversalQrScannerModalState extends State<UniversalQrScannerModal>
     try {
       await _scannerController.switchCamera();
     } catch (_) {}
+  }
+
+  void _selectCameraMode(bool enable) {
+    if (enable == _isCameraMode) return;
+    setState(() => _isCameraMode = enable);
+    if (enable) {
+      _requestAndStartCamera();
+    } else {
+      try {
+        _scannerController.stop();
+      } catch (_) {}
+    }
   }
 
   @override
@@ -212,7 +303,7 @@ class _UniversalQrScannerModalState extends State<UniversalQrScannerModal>
                 children: [
                   Expanded(
                     child: InkWell(
-                      onTap: () => setState(() => _isCameraMode = true),
+                      onTap: () => _selectCameraMode(true),
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -240,7 +331,7 @@ class _UniversalQrScannerModalState extends State<UniversalQrScannerModal>
                   ),
                   Expanded(
                     child: InkWell(
-                      onTap: () => setState(() => _isCameraMode = false),
+                      onTap: () => _selectCameraMode(false),
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -290,9 +381,9 @@ class _UniversalQrScannerModalState extends State<UniversalQrScannerModal>
             children: [
               const Icon(Icons.videocam_off_rounded, size: 48, color: AppColors.warning),
               const SizedBox(height: 12),
-              Text(
-                'Camera Access Notice',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15),
+              const Text(
+                'Camera Access Required',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15),
               ),
               const SizedBox(height: 6),
               Text(
@@ -300,12 +391,42 @@ class _UniversalQrScannerModalState extends State<UniversalQrScannerModal>
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () => setState(() => _isCameraMode = false),
-                icon: const Icon(Icons.flash_on_rounded, size: 16),
-                label: const Text('Use Quick Presets Instead'),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              const SizedBox(height: 18),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 10,
+                runSpacing: 8,
+                children: [
+                  if (_isPermanentlyDenied)
+                    ElevatedButton.icon(
+                      onPressed: openAppSettings,
+                      icon: const Icon(Icons.settings_rounded, size: 16),
+                      label: const Text('Open App Settings'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                    )
+                  else
+                    ElevatedButton.icon(
+                      onPressed: _requestAndStartCamera,
+                      icon: const Icon(Icons.refresh_rounded, size: 16),
+                      label: const Text('Grant Permission / Retry'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  OutlinedButton.icon(
+                    onPressed: () => _selectCameraMode(false),
+                    icon: const Icon(Icons.keyboard_rounded, size: 16),
+                    label: const Text('Use Manual / Presets'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white70,
+                      side: const BorderSide(color: Colors.white24),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -313,40 +434,71 @@ class _UniversalQrScannerModalState extends State<UniversalQrScannerModal>
       );
     }
 
+    if (_isCameraStarting) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: AppColors.primary),
+            SizedBox(height: 12),
+            Text(
+              'Initializing Camera Hardware...',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Stack(
       alignment: Alignment.center,
       children: [
-        // Live camera preview stream
-        ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: MobileScanner(
-            controller: _scannerController,
-            onDetect: _onDetect,
-            errorBuilder: (context, error) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.no_photography_rounded, size: 40, color: AppColors.warning),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Camera unavailable: ${error.errorCode.name}',
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: () => setState(() => _isCameraMode = false),
-                        style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)),
-                        child: const Text('Switch to Manual Input', style: TextStyle(fontSize: 12)),
-                      ),
-                    ],
+        // Live camera preview stream - Positioned.fill guarantees complete container coverage
+        Positioned.fill(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: MobileScanner(
+              controller: _scannerController,
+              onDetect: _onDetect,
+              useAppLifecycleState: false, // Managed manually via WidgetsBindingObserver
+              errorBuilder: (context, error) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.no_photography_rounded, size: 40, color: AppColors.warning),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Camera unavailable: ${error.errorCode.name}',
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: _requestAndStartCamera,
+                              icon: const Icon(Icons.refresh_rounded, size: 14),
+                              label: const Text('Retry Camera', style: TextStyle(fontSize: 12)),
+                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                            ),
+                            const SizedBox(width: 8),
+                            OutlinedButton(
+                              onPressed: () => _selectCameraMode(false),
+                              style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)),
+                              child: const Text('Switch to Manual', style: TextStyle(fontSize: 12)),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
 

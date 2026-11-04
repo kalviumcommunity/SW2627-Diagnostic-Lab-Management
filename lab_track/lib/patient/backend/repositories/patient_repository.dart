@@ -14,6 +14,12 @@ class PatientRepository {
   Future<OrderModel> bookTest(PatientBookingRequest request) =>
       _apiService.submitBooking(request);
 
+  Future<List<OrderModel>> getOrders(String patientId) =>
+      _apiService.getPatientOrders(patientId);
+
+  List<OrderModel> getInitialOrders(String patientId) =>
+      _apiService.getInitialOrders(patientId);
+
   Future<SampleModel?> getActiveSample(String patientId) =>
       _apiService.getActiveSample(patientId);
 
@@ -29,4 +35,3 @@ class PatientRepository {
   List<ReportModel> getInitialReports(String patientId) =>
       _apiService.getInitialReports(patientId);
 }
-

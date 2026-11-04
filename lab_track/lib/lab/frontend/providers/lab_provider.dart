@@ -49,6 +49,8 @@ class LabProvider extends ChangeNotifier {
   List<LabRackModel> get racks => _racks;
   List<AnalyzerEquipmentModel> get analyzers => _analyzers;
   List<QcInspectionModel> get qcRejections => _qcRejections;
+  List<ReportModel> get reports => _reports;
+  List<SampleModel> get samples => _samples;
 
   /// Filtered specimens based on search and active department
   List<SampleModel> get filteredSpecimens {

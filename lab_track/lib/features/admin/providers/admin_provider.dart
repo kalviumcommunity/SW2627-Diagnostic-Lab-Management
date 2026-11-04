@@ -1,1 +1,1 @@
-﻿// Provider managing administrative operations and analytics state.
+// Provider managing administrative operations and analytics state.

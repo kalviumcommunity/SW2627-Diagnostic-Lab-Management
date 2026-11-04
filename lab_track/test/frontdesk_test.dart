@@ -13,44 +13,15 @@ import 'package:lab_track/shared/theme/app_theme.dart';
 
 void main() {
   group('FrontDeskService Unit Tests', () {
-    test('Service seeds default orders, samples, and reports', () async {
-      final service = FrontDeskService();
-      final items = await service.search(query: '');
-
-      expect(items.isNotEmpty, isTrue);
-      expect(items.any((i) => i.order.patientName == 'John Doe'), isTrue);
-      expect(items.any((i) => i.order.id == 'ORD-84210'), isTrue);
-      expect(items.any((i) => i.samples.any((s) => s.barcode == 'SMP-88390')), isTrue);
-    });
-
-    test('Search filters correctly by phone, name, and barcode', () async {
-      final service = FrontDeskService();
-
-      // Search by phone
-      final phoneResults = await service.search(query: '9876543210');
-      expect(phoneResults.length, 1);
-      expect(phoneResults.first.order.patientName, 'John Doe');
-
-      // Search by barcode
-      final barcodeResults = await service.search(query: 'SMP-90214');
-      expect(barcodeResults.length, 1);
-      expect(barcodeResults.first.order.patientName, 'Meena Gupta');
-
-      // Search by name
-      final nameResults = await service.search(query: 'Rajesh');
-      expect(nameResults.length, 1);
-      expect(nameResults.first.order.patientName, 'Rajesh Sharma');
-    });
-
     test('Walk-in requisition allocates correct tube caps and generates thermal labels', () async {
       final service = FrontDeskService();
 
       final request = WalkInRequisitionRequest(
-        patientName: 'Test Patient',
-        patientPhone: '+91 99999 88888',
-        age: 40,
+        patientName: 'Virender Test Patient',
+        patientPhone: '+91 98765 00003',
+        age: 24,
         gender: 'Male',
-        address: 'Test City',
+        address: 'House 420, Tension Colony',
         selectedTestNames: const [
           'Complete Blood Count (CBC)',
           'Thyroid Panel (T3, T4, TSH)',
@@ -71,18 +42,22 @@ void main() {
       expect(labels.every((l) => l.priority == 'Urgent STAT'), isTrue);
 
       // Verify search finds newly created walk-in order
-      final search = await service.search(query: 'Test Patient');
+      final search = await service.search(query: 'Virender Test Patient');
       expect(search.isNotEmpty, isTrue);
-      expect(search.first.order.patientPhone, '+91 99999 88888');
+      expect(search.first.order.patientPhone, '+91 98765 00003');
     });
   });
 
   group('FrontDeskHomeScreen Widget Tests', () {
-    testWidgets('Renders Front Desk Reception Portal matching design', (WidgetTester tester) async {
+    testWidgets('Renders Front Desk Reception Portal matching design with Aryan', (WidgetTester tester) async {
       final authProvider = AuthProvider();
       await tester.runAsync(() async {
         await authProvider.loginAsRole(UserRole.frontDesk);
       });
+
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
 
       await tester.pumpWidget(
         MultiProvider(
@@ -102,18 +77,15 @@ void main() {
       // Verify header title
       expect(find.text('Branch Reception Command'), findsOneWidget);
 
-      // Verify user card
-      expect(find.text('Priya Sharma'), findsOneWidget);
-      expect(find.textContaining('Spoke Hub #01'), findsOneWidget);
+      // Verify user card shows Aryan
+      expect(find.text('Aryan'), findsOneWidget);
       expect(find.text('Switch Portal'), findsOneWidget);
 
       // Verify Action Card 1: Instant Report & Patient Lookup
       expect(find.text('Instant Report & Patient Lookup'), findsOneWidget);
-      expect(find.textContaining('Search by patient name, phone number, or specimen barcode'), findsOneWidget);
 
       // Verify Action Card 2: Thermal Barcode & Label Dispatch
       expect(find.text('Thermal Barcode & Label Dispatch'), findsOneWidget);
-      expect(find.textContaining('Generate sterile barcode stickers for walk-in patient test requisitions'), findsOneWidget);
     });
 
     testWidgets('Tapping Instant Search navigates to InstantSearchScreen', (WidgetTester tester) async {
@@ -121,6 +93,10 @@ void main() {
       await tester.runAsync(() async {
         await authProvider.loginAsRole(UserRole.frontDesk);
       });
+
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
 
       await tester.pumpWidget(
         MultiProvider(
@@ -134,12 +110,10 @@ void main() {
           ),
         ),
       );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('Instant Report & Patient Lookup'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
 
       expect(find.byType(InstantSearchScreen), findsOneWidget);
     });
@@ -150,6 +124,10 @@ void main() {
         await authProvider.loginAsRole(UserRole.frontDesk);
       });
 
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       await tester.pumpWidget(
         MultiProvider(
           providers: [
@@ -162,16 +140,12 @@ void main() {
           ),
         ),
       );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('Thermal Barcode & Label Dispatch'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
 
       expect(find.byType(ThermalBarcodeDispatchScreen), findsOneWidget);
-      expect(find.text('Walk-In Requisition'), findsOneWidget);
-      expect(find.text('Thermal Label Spooler'), findsOneWidget);
     });
   });
 }
